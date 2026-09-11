@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tablas de Multiplicar — Repetición Espaciada</title>
+  <meta name="description"
+    content="Practica las tablas de multiplicar con repetición espaciada. App educativa para niños de 9-11 años.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <main id="app">
+
+    <!-- ═══════════════ PANTALLA: PERFILES ═══════════════ -->
+    <section id="pantalla-perfiles" class="pantalla">
+      <div class="contenedor">
+        <h1>🧮 Tablas de Multiplicar</h1>
+        <p class="subtitulo">Elige tu perfil para empezar</p>
+        <div id="lista-perfiles"></div>
+        <div class="nuevo-perfil">
+          <button id="btn-mostrar-nuevo" class="btn-nuevo-perfil" aria-label="Crear nuevo perfil">
+            <span class="icono-mas">+</span>
+            <span>Nuevo perfil</span>
+          </button>
+          <div id="input-nuevo-perfil" class="input-nuevo" hidden>
+            <input type="text" id="nombre-nuevo-perfil" placeholder="Escribe tu nombre..." maxlength="20"
+              autocomplete="off" aria-label="Nombre del nuevo perfil">
+            <button id="btn-crear-perfil" class="btn-confirmar" aria-label="Crear perfil">✓</button>
+            <button id="btn-cancelar-nuevo" class="btn-cancelar" aria-label="Cancelar">✗</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ PANTALLA: INICIO ═══════════════ -->
+    <section id="pantalla-inicio" class="pantalla" hidden>
+      <div class="contenedor">
+        <h1 id="saludo"></h1>
+        <div id="resumen-rapido" class="stats-cards"></div>
+        <div class="botones-inicio">
+          <button id="btn-empezar" class="btn-principal" aria-label="Empezar sesión">▶ Empezar sesión</button>
+          <div class="botones-secundarios">
+            <button id="btn-progreso" class="btn-secundario" aria-label="Ver mi progreso">📊 Mi progreso</button>
+            <button id="btn-cambiar-perfil" class="btn-secundario" aria-label="Cambiar de perfil">🔧 Cambiar
+              perfil</button>
+          </div>
+        </div>
+        <div id="aviso-tablas-extendidas" class="aviso-desbloqueo" hidden></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ PANTALLA: PRÁCTICA ═══════════════ -->
+    <section id="pantalla-practica" class="pantalla" hidden>
+      <div class="contenedor practica-layout">
+        <div class="barra-superior">
+          <div class="progreso-barra">
+            <div id="progreso-fill" class="progreso-fill"></div>
+          </div>
+          <span id="progreso-texto" class="progreso-texto"></span>
+          <div id="racha-display" class="racha" hidden>
+            <span class="racha-fuego">🔥</span>
+            <span id="racha-numero">0</span>
+          </div>
+        </div>
+
+        <div id="zona-pregunta" class="zona-pregunta glass">
+          <div id="pregunta-texto" class="pregunta"></div>
+        </div>
+
+        <div class="zona-input">
+          <div id="input-respuesta" class="input-display glass" role="textbox" aria-label="Tu respuesta">
+            <span id="respuesta-valor"></span>
+            <span id="cursor" class="cursor-parpadeo">|</span>
+          </div>
+        </div>
+
+        <div class="teclado" role="group" aria-label="Teclado numérico">
+          <button class="tecla" data-tecla="1" aria-label="1">1</button>
+          <button class="tecla" data-tecla="2" aria-label="2">2</button>
+          <button class="tecla" data-tecla="3" aria-label="3">3</button>
+          <button class="tecla" data-tecla="4" aria-label="4">4</button>
+          <button class="tecla" data-tecla="5" aria-label="5">5</button>
+          <button class="tecla" data-tecla="6" aria-label="6">6</button>
+          <button class="tecla" data-tecla="7" aria-label="7">7</button>
+          <button class="tecla" data-tecla="8" aria-label="8">8</button>
+          <button class="tecla" data-tecla="9" aria-label="9">9</button>
+          <button class="tecla tecla-borrar" data-tecla="borrar" aria-label="Borrar último dígito">⌫</button>
+          <button class="tecla" data-tecla="0" aria-label="0">0</button>
+          <button class="tecla tecla-confirmar" data-tecla="confirmar" aria-label="Confirmar respuesta">✓</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ PANTALLA: RESUMEN ═══════════════ -->
+    <section id="pantalla-resumen" class="pantalla" hidden>
+      <div class="contenedor">
+        <h2>📝 Resumen de la sesión</h2>
+        <div id="resumen-circulo" class="resumen-circulo">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <defs>
+              <linearGradient id="grad-circulo" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#8b5cf6" />
+                <stop offset="100%" style="stop-color:#3b82f6" />
+              </linearGradient>
+            </defs>
+            <circle class="circulo-track" cx="70" cy="70" r="58" />
+            <circle id="circulo-prog" class="circulo-progreso" cx="70" cy="70" r="58" stroke-dasharray="364.42"
+              stroke-dashoffset="364.42" transform="rotate(-90 70 70)" />
+            <text id="circulo-texto" class="circulo-texto" x="70" y="70">0%</text>
+          </svg>
+        </div>
+        <div id="resumen-stats" class="resumen-stats"></div>
+        <div id="resumen-fallados" class="resumen-fallados"></div>
+        <div id="resumen-medallas" class="resumen-medallas" hidden></div>
+        <p id="resumen-mensaje" class="mensaje-motivador"></p>
+        <button id="btn-volver-inicio" class="btn-principal" aria-label="Volver al inicio">Volver al inicio</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════ PANTALLA: PROGRESO ═══════════════ -->
+    <section id="pantalla-progreso" class="pantalla" hidden>
+      <div class="contenedor contenedor-ancho">
+        <h2>📊 Mi Progreso</h2>
+        <div id="progreso-stats" class="stats-cards"></div>
+        <div id="mapa-calor" class="mapa-calor"></div>
+        <div id="leyenda-mapa" class="leyenda"></div>
+        <div id="medallas-todas" class="medallas-showcase"></div>
+        <div id="opcion-ext-wrapper" class="opcion-extendidas glass"></div>
+        <div class="botones-progreso">
+          <button id="btn-exportar" class="btn-secundario" aria-label="Exportar progreso">📥 Exportar</button>
+          <button id="btn-importar-trigger" class="btn-secundario" aria-label="Importar progreso">📤 Importar</button>
+          <input type="file" id="input-importar" accept=".json" hidden aria-label="Seleccionar archivo de progreso">
+        </div>
+        <button id="btn-volver-progreso" class="btn-secundario" aria-label="Volver al inicio">← Volver</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════ MODAL ═══════════════ -->
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <div id="modal-contenido"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ DEBUG PANEL ═══════════════ -->
+  <div id="debug-panel" class="debug-panel" hidden>
+    <h4>🛠️ Debug</h4>
+    <p id="debug-tiempo"></p>
+    <button id="debug-avanzar" class="btn-debug">⏩ +1 día</button>
+    <button id="debug-reset" class="btn-debug">🗑️ Reset perfil</button>
+    <button id="debug-consola" class="btn-debug">📋 Estado → consola</button>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+
+</html>
