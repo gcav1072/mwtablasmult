@@ -15,16 +15,33 @@ const T = {
   todoAlDia: '🎉 ¡Todo al día! Vuelve mañana',
   enCooldown: horasMin => `⏳ Vuelve en ${horasMin}`,
   stats: {
-    pendientes: 'Pendientes hoy',
+    pendientes: 'Para hoy',
     dominadas: 'Dominadas',
-    rachaMax: 'Racha máxima',
+    rachaMax: 'Racha',
     aciertos: 'Aciertos',
     fallos: 'Fallos',
     tiempoMedio: 'Tiempo medio',
+    repescas: 'Repescas superadas',
   },
   feedback: {
     facil: '✨ ¡Genial!',
     bien: '✅ ¡Bien!',
+    titubeante: '👌 ¡Correcto!',
+    memoriza: [
+      '🧠 ¡Este es el resultado! ¡No lo vayas a olvidar!',
+      '✨ ¡Grábalo bien! Este es el resultado',
+      '🎯 ¡Este es el resultado! ¡Memorízalo!',
+      '🔑 ¡Este es el resultado! ¡Recuérdalo!',
+    ],
+    copiar: '✍️ Escríbe el número en el cuadro de abajo para seguir',
+    copiado: '✅ ¡Eso es!',
+    repescaMensajes: [
+      '💪 ¡Casi lo tienes! Vamos a por esa otra vez',
+      '😄 ¡Se te está resistiendo! Esta vez seguro que sí',
+      '🔥 ¡Esta tabla te está poniendo a prueba! ¡Tú puedes!',
+      '🚀 ¡Ya casi es tuya! Un intento más y lo tienes',
+      '🌟 ¡Las tablas más difíciles son las que más orgullo dan! ¡Vamos!',
+    ],
   },
   resumen: {
     titulo: 'Resumen de la sesión',
@@ -33,7 +50,8 @@ const T = {
     nuevasMedallas: '🏅 ¡Medallas nuevas!',
     volver: 'Volver al inicio',
   },
-  repesca: n => `🔄 Repesca: ${n} restante${n !== 1 ? 's' : ''}`,
+  repesca: (ronda, restantes) =>
+    `🔄 Repesca ${ronda} · ${restantes} restante${restantes !== 1 ? 's' : ''}`,
   desbloqueo: {
     mensaje: '🎉 ¡Has dominado el 80% de las tablas! ¿Quieres desbloquear las tablas del 11 y 12?',
     boton: '✨ ¡Sí, desbloquear!',
@@ -51,6 +69,12 @@ const T = {
   extendidas: {
     label: 'Incluir tablas del 11 y 12',
     auto: '✨ Desbloqueado',
+  },
+  extra: {
+    titulo: '💪 ¿Quieres practicar un poco más?',
+    desc: 'Puedes hacer 5 tarjetas más ahora mismo. ¡Solo si te ves con energía!',
+    aviso: '⚠️ Aviso: si haces más tarjetas hoy, en los próximos días tendrás unas cuantas más que repasar.',
+    anadir5: '+5 tarjetas',
   },
   motivacion: {
     excelente: [
@@ -72,22 +96,31 @@ const T = {
       '¡Tú puedes! Mañana lo harás todavía mejor 💫',
     ],
   },
-  leyenda: ['No practicada', 'Empezando', 'Aprendiendo', 'Progresando', 'Bien', 'Muy bien', 'Dominada', '¡Sólida!'],
+  leyenda: ['No practicada', 'Empezando', 'Aprendiendo', 'Progresando', 'Bien', 'Dominada', 'Consolidada', 'Casi graduada', '¡Graduada! 🎓'],
 };
 
 // ═══════════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ═══════════════════════════════════════════════════════
-const CLAVE = 'tablas_multiplicar_v1';
+const CLAVE = 'tablas_multiplicar_v2';
 
 const CONFIG = {
   tablas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   tablasExtendidas: [11, 12],
   factores: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   itemsPorSesion: 15,
+  extraPorRonda: 5,
   maxNuevosPorSesion: 5,
-  umbralRapidoMs: 5000,
-  escalonesDias: [1, 2, 4, 7, 15, 30, 60],
+  // 7 niveles de dominio (índice 0..6 = Nivel 1..7)
+  escalonesDias: [1, 3, 7, 14, 30, 60, 90],
+  // Tramos de latencia: premia la evocación automática y frena el cálculo secuencial
+  umbralInstantaneoMs: 1500,
+  umbralAutomaticoMs: 3000,
+  // A partir de este nivel (0-indexado) la ficha cuenta como "Dominada"
+  escalonDominada: 4,
+  // Fichas graduadas: reaparecen como "retos" de mantenimiento cada N días
+  retoIntervaloDias: 7,
+  maxRetosPorSesion: 2,
   modoPrueba: new URLSearchParams(location.search).has('debug'),
   umbralDesbloqueo: 0.8,
 };
@@ -100,14 +133,15 @@ const COOLDOWN_SESION = CONFIG.modoPrueba ? DIA : 20 * 60 * 60 * 1000; // 20h en
 // ═══════════════════════════════════════════════════════
 const COLORES_ESCALON = [
   '#1e293b', // nunca practicada
-  '#ef4444', // escalón 0
-  '#f97316', // escalón 1
-  '#eab308', // escalón 2
-  '#84cc16', // escalón 3
-  '#22c55e', // escalón 4
-  '#14b8a6', // escalón 5
-  '#3b82f6', // escalón 6 (dominada)
+  '#ef4444', // nivel 1 · 1 día
+  '#f97316', // nivel 2 · 3 días
+  '#eab308', // nivel 3 · 7 días
+  '#84cc16', // nivel 4 · 14 días
+  '#22c55e', // nivel 5 · 30 días (dominada)
+  '#14b8a6', // nivel 6 · 60 días
+  '#3b82f6', // nivel 7 · 90 días
 ];
+const COLOR_GRADUADA = '#f59e0b'; // 🎓 dorado: dominio a largo plazo confirmado
 
 // ═══════════════════════════════════════════════════════
 // MEDALLAS
@@ -121,6 +155,7 @@ const MEDALLAS = [
   { id: 'velocista', emoji: '⚡', nombre: 'Velocista', desc: '5 respuestas rápidas seguidas' },
   { id: 'estudioso', emoji: '📚', nombre: 'Estudioso', desc: 'Completar 10 sesiones' },
   { id: 'perfeccion', emoji: '🎯', nombre: 'Perfección', desc: 'Sesión sin ningún fallo' },
+  { id: 'graduacion', emoji: '🎓', nombre: 'Graduación', desc: 'Graduar 5 fichas (dominio a largo plazo)' },
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -130,7 +165,8 @@ let ESTADO = null;
 let pantallaActual = '';
 let feedbackActivo = false;
 let feedbackTimer = null;
-let skipListeners = [];
+let corrigiendo = false;
+let intentosFallidos = {};
 let inputActual = '';
 let audioCtx = null;
 let debugTimeOffset = 0;
@@ -139,12 +175,15 @@ let pendingDeleteName = null;
 const sesion = {
   cola: [],
   repesca: [],
-  yaRepescados: new Set(),
   itemActual: null,
+  orientacionActual: null,
+  retoKeys: new Set(),
   totalPreguntas: 0,
   preguntaActual: 0,
   enRepesca: false,
-  stats: { aciertos: 0, fallos: 0, rachaActual: 0, rachaMax: 0, velocidadRachaActual: 0, tiempos: [], itemsFallados: [] },
+  rondaRepesca: 0,
+  esExtra: false,
+  stats: { aciertos: 0, fallos: 0, repescasSuperadas: 0, rachaActual: 0, rachaMax: 0, velocidadRachaActual: 0, tiempos: [], itemsFallados: [] },
   t0: 0,
   inicioSesion: 0,
 };
@@ -170,13 +209,15 @@ const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 // ═══════════════════════════════════════════════════════
 function cargarTodo() {
   try {
+    // El modelo v1 (escalones antiguos y pares sin conmutativa) queda obsoleto
+    localStorage.removeItem('tablas_multiplicar_v1');
     const raw = localStorage.getItem(CLAVE);
     if (raw) {
       const datos = JSON.parse(raw);
-      if (datos.version === 1) return datos;
+      if (datos.version === 2) return datos;
     }
   } catch (e) { console.warn('Datos corruptos, reiniciando', e); }
-  return { version: 1, perfilActivo: null, perfiles: {} };
+  return { version: 2, perfilActivo: null, perfiles: {} };
 }
 
 function guardarTodo() {
@@ -190,14 +231,26 @@ function guardarTodo() {
 // ═══════════════════════════════════════════════════════
 // PERFILES
 // ═══════════════════════════════════════════════════════
+// Clave canónica: el par conmutativo {a,b} se guarda siempre como "menor x mayor".
+// Así 6×7 y 7×6 comparten una única ficha y nunca se estudian por duplicado.
+function claveCanonica(a, b) {
+  return a <= b ? `${a}x${b}` : `${b}x${a}`;
+}
+
+function crearItem(a, b) {
+  const t = Math.min(a, b);
+  const f = Math.max(a, b);
+  return {
+    t, f, escalon: 0, graduada: false, proximoReto: 0,
+    aciertos: 0, fallos: 0, racha: 0, ultimaVez: null, proximaRevision: 0,
+  };
+}
+
 function crearPerfil(nombre) {
   const items = {};
   for (const t of CONFIG.tablas) {
     for (const f of CONFIG.factores) {
-      items[`${t}x${f}`] = {
-        t, f, escalon: 0, aciertos: 0, fallos: 0, racha: 0,
-        ultimaVez: null, proximaRevision: 0,
-      };
+      items[claveCanonica(t, f)] = crearItem(t, f);
     }
   }
   return {
@@ -219,13 +272,8 @@ function activarTablasExtendidas(perfil) {
   perfil.tablasExtendidas = true;
   for (const t of CONFIG.tablasExtendidas) {
     for (const f of CONFIG.factores) {
-      const key = `${t}x${f}`;
-      if (!perfil.items[key]) {
-        perfil.items[key] = {
-          t, f, escalon: 0, aciertos: 0, fallos: 0, racha: 0,
-          ultimaVez: null, proximaRevision: 0,
-        };
-      }
+      const key = claveCanonica(t, f);
+      if (!perfil.items[key]) perfil.items[key] = crearItem(t, f);
     }
   }
   guardarTodo();
@@ -233,8 +281,8 @@ function activarTablasExtendidas(perfil) {
 
 function verificarDesbloqueo(perfil) {
   if (perfil.tablasExtendidas) return false;
-  const baseItems = Object.values(perfil.items).filter(i => i.t <= 10);
-  const dominados = baseItems.filter(i => i.escalon >= 4).length;
+  const baseItems = Object.values(perfil.items).filter(i => i.f <= 10);
+  const dominados = baseItems.filter(i => i.escalon >= CONFIG.escalonDominada).length;
   return baseItems.length > 0 && (dominados / baseItems.length) >= CONFIG.umbralDesbloqueo;
 }
 
@@ -242,6 +290,27 @@ function tablasActivas(perfil) {
   return perfil.tablasExtendidas
     ? [...CONFIG.tablas, ...CONFIG.tablasExtendidas]
     : [...CONFIG.tablas];
+}
+
+// Orientaciones (tabla × factor) válidas para una ficha canónica.
+// Un par como {5,11} solo se puede preguntar como 11×5 (el 11 nunca es factor).
+function orientacionesValidas(item, perfil) {
+  const tabs = tablasActivas(perfil);
+  const ops = [];
+  if (tabs.includes(item.t) && CONFIG.factores.includes(item.f)) ops.push({ t: item.t, f: item.f });
+  if (tabs.includes(item.f) && CONFIG.factores.includes(item.t)) ops.push({ t: item.f, f: item.t });
+  return ops;
+}
+
+// Fichas que el perfil puede practicar (con al menos una orientación válida)
+function paresVisibles(perfil) {
+  return Object.values(perfil.items).filter(i => orientacionesValidas(i, perfil).length > 0);
+}
+
+// Elige al azar una orientación válida para la ficha
+function orientar(item, perfil) {
+  const ops = orientacionesValidas(item, perfil);
+  return ops.length > 0 ? ops[Math.floor(Math.random() * ops.length)] : { t: item.t, f: item.f };
 }
 
 // ═══════════════════════════════════════════════════════
@@ -280,76 +349,121 @@ function sonidoMedalla() {
 // ═══════════════════════════════════════════════════════
 // ALGORITMO DE REPETICIÓN ESPACIADA
 // ═══════════════════════════════════════════════════════
+// ── Clasificación por latencia ──
+// instantaneo (<1,5s): evocación directa  ·  automatico (1,5-3s): automatizado
+// titubeante (>3s): acierta pero calculando  ·  fallo
 function clasificar(esCorrecto, ms) {
   if (!esCorrecto) return 'fallo';
-  return ms < CONFIG.umbralRapidoMs ? 'facil' : 'bien';
+  if (ms < CONFIG.umbralInstantaneoMs) return 'instantaneo';
+  if (ms <= CONFIG.umbralAutomaticoMs) return 'automatico';
+  return 'titubeante';
 }
 
-function actualizarItem(item, resultado) {
+function actualizarItem(item, resultado, repetido = false) {
   const now = ahora();
-  item.ultimaVez = now;
 
+  // ── Fallo ──
   if (resultado === 'fallo') {
     item.fallos++;
     item.racha = 0;
-    item.escalon = 0;
-    item.proximaRevision = now + CONFIG.escalonesDias[0] * DIA;
-  } else {
-    item.aciertos++;
-    item.racha++;
-    item.escalon = Math.min(
-      item.escalon + (resultado === 'facil' ? 2 : 1),
-      CONFIG.escalonesDias.length - 1
-    );
+    item.ultimaVez = now;
+
+    if (repetido) {
+      // Fallo repetido dentro de la misma sesión (repesca): reinicia por completo
+      item.graduada = false;
+      item.escalon = 0;
+    } else if (item.graduada) {
+      // Una ficha graduada que falla vuelve al mazo activo, sin castigo duro
+      item.graduada = false;
+      item.escalon = CONFIG.escalonDominada;
+    } else {
+      // Retroceso suave de 2 niveles: no devuelve al niño al principio
+      item.escalon = Math.max(0, item.escalon - 2);
+    }
+
+    item.proximoReto = 0;
     item.proximaRevision = now + CONFIG.escalonesDias[item.escalon] * DIA;
+    return;
   }
+
+  // ── Acierto ──
+  item.aciertos++;
+  item.racha++;
+  item.ultimaVez = now;
+
+  // Titubeante: acierta, pero no consolida ni avanza (mantiene el intervalo)
+  if (resultado === 'titubeante') {
+    if (item.graduada) item.proximoReto = now + CONFIG.retoIntervaloDias * DIA;
+    else item.proximaRevision = now + CONFIG.escalonesDias[item.escalon] * DIA;
+    return;
+  }
+
+  // Repaso de una ficha ya graduada: confirma el dominio y se reprograma
+  if (item.graduada) {
+    item.proximoReto = now + CONFIG.retoIntervaloDias * DIA;
+    return;
+  }
+
+  const tope = CONFIG.escalonesDias.length - 1;
+  if (item.escalon >= tope) {
+    // Superado el repaso de 90 días con respuesta automática → graduada 🎓
+    item.graduada = true;
+    item.proximoReto = now + CONFIG.retoIntervaloDias * DIA;
+    return;
+  }
+
+  const paso = resultado === 'instantaneo' ? 2 : 1;
+  item.escalon = Math.min(item.escalon + paso, tope);
+  item.proximaRevision = now + CONFIG.escalonesDias[item.escalon] * DIA;
 }
 
-function construirSesion(perfil) {
+function construirSesion(perfil, objetivo) {
   const now = ahora();
-  const tabs = tablasActivas(perfil);
-  const items = Object.values(perfil.items).filter(i => tabs.includes(i.t));
+  const items = paresVisibles(perfil);
   const seleccionados = [];
   const keys = new Set();
 
   function agregar(item) {
-    const key = `${item.t}x${item.f}`;
+    const key = claveCanonica(item.t, item.f);
     if (keys.has(key)) return false;
     keys.add(key);
     seleccionados.push(item);
     return true;
   }
 
+  // Las fichas graduadas salen del mazo activo: se repasan aparte, como retos
+  const activos = items.filter(i => !i.graduada);
+
   // 1. Vencidos: los que ya toca repasar
-  const vencidos = items
+  const vencidos = activos
     .filter(i => i.ultimaVez !== null && i.proximaRevision <= now)
     .sort((a, b) => a.proximaRevision - b.proximaRevision);
   for (const item of vencidos) {
-    if (seleccionados.length >= CONFIG.itemsPorSesion) break;
+    if (seleccionados.length >= objetivo) break;
     agregar(item);
   }
 
   // 2. Nuevos: máximo maxNuevosPorSesion
-  if (seleccionados.length < CONFIG.itemsPorSesion) {
+  if (seleccionados.length < objetivo) {
     const cupo = Math.min(
       CONFIG.maxNuevosPorSesion,
-      CONFIG.itemsPorSesion - seleccionados.length
+      objetivo - seleccionados.length
     );
-    const nuevos = mezclar(items.filter(i => i.ultimaVez === null));
+    const nuevos = mezclar(activos.filter(i => i.ultimaVez === null));
     let n = 0;
     for (const item of nuevos) {
-      if (seleccionados.length >= CONFIG.itemsPorSesion || n >= cupo) break;
+      if (seleccionados.length >= objetivo || n >= cupo) break;
       if (agregar(item)) n++;
     }
   }
 
   // 3. Relleno: los que más fallan
-  if (seleccionados.length < CONFIG.itemsPorSesion) {
-    const resto = items
-      .filter(i => !keys.has(`${i.t}x${i.f}`))
+  if (seleccionados.length < objetivo) {
+    const resto = activos
+      .filter(i => !keys.has(claveCanonica(i.t, i.f)))
       .sort((a, b) => (b.fallos - b.aciertos) - (a.fallos - a.aciertos));
     for (const item of resto) {
-      if (seleccionados.length >= CONFIG.itemsPorSesion) break;
+      if (seleccionados.length >= objetivo) break;
       agregar(item);
     }
   }
@@ -360,6 +474,19 @@ function construirSesion(perfil) {
 // ═══════════════════════════════════════════════════════
 // PISTAS DINÁMICAS
 // ═══════════════════════════════════════════════════════
+// Fichas graduadas cuyo reto de mantenimiento ya toca confirmar
+function retosVencidos(perfil) {
+  const now = ahora();
+  return paresVisibles(perfil)
+    .filter(i => i.graduada && i.proximoReto > 0 && i.proximoReto <= now)
+    .sort((a, b) => a.proximoReto - b.proximoReto);
+}
+
+// Retos que entran en la sesión diaria (1-2 al azar)
+function seleccionarRetos(perfil) {
+  return mezclar(retosVencidos(perfil)).slice(0, CONFIG.maxRetosPorSesion);
+}
+
 function generarPista(t, f) {
   const r = t * f;
   switch (f) {
@@ -393,25 +520,26 @@ function verificarMedallas(perfil, stats) {
   // Racha 10 en sesión
   if (stats.rachaMax >= 10) dar('racha_10');
 
-  // Tabla dominada (alguna tabla con todos los factores en escalón ≥ 4)
+  // Tabla dominada (alguna tabla con todos sus factores en nivel ≥ dominada)
   const tabs = tablasActivas(perfil);
   for (const t of tabs) {
     const todosFactores = CONFIG.factores.every(f => {
-      const item = perfil.items[`${t}x${f}`];
-      return item && item.escalon >= 4;
+      const item = perfil.items[claveCanonica(t, f)];
+      return item && item.escalon >= CONFIG.escalonDominada;
     });
     if (todosFactores) { dar('tabla_dominada'); break; }
   }
 
-  // Mitad del camino
+  // Mitad del camino / Gran maestro (sobre fichas canónicas: la conmutativa no infla el total)
   const allItems = Object.values(perfil.items);
-  const dominados = allItems.filter(i => i.escalon >= 4).length;
+  const dominados = allItems.filter(i => i.escalon >= CONFIG.escalonDominada).length;
   if (allItems.length > 0 && dominados / allItems.length >= 0.5) dar('mitad_camino');
-
-  // Gran maestro
   if (allItems.length > 0 && dominados === allItems.length) dar('maestro');
 
-  // Velocista (5 rápidas seguidas)
+  // Graduación (5 fichas con dominio a largo plazo confirmado)
+  if (allItems.filter(i => i.graduada).length >= 5) dar('graduacion');
+
+  // Velocista (5 respuestas automáticas seguidas: ≤3s)
   if (stats.velocidadRachaActual >= 5) dar('velocista');
 
   // Estudioso (10 sesiones)
@@ -450,8 +578,8 @@ function renderPerfiles() {
 
   lista.innerHTML = nombres.map(nombre => {
     const perfil = ESTADO.perfiles[nombre];
-    const items = Object.values(perfil.items);
-    const dominados = items.filter(i => i.escalon >= 4).length;
+    const items = paresVisibles(perfil);
+    const dominados = items.filter(i => i.escalon >= CONFIG.escalonDominada).length;
     const pct = items.length > 0 ? Math.round(dominados / items.length * 100) : 0;
     const sesiones = perfil.sesiones ? perfil.sesiones.length : 0;
 
@@ -486,17 +614,17 @@ function renderInicio() {
 
   // Stats rápidas
   const now = ahora();
-  const tabs = tablasActivas(perfil);
-  const items = Object.values(perfil.items).filter(i => tabs.includes(i.t));
-  const pendientes = items.filter(i => i.ultimaVez !== null && i.proximaRevision <= now).length;
-  const nuevos = items.filter(i => i.ultimaVez === null).length;
-  const dominados = items.filter(i => i.escalon >= 4).length;
+  const items = paresVisibles(perfil);
+  const pendientes = items.filter(i => !i.graduada && i.ultimaVez !== null && i.proximaRevision <= now).length;
+  const nuevos = items.filter(i => !i.graduada && i.ultimaVez === null).length;
+  const retos = retosVencidos(perfil).length;
+  const dominados = items.filter(i => i.escalon >= CONFIG.escalonDominada).length;
   const total = items.length;
   const pct = total > 0 ? Math.round(dominados / total * 100) : 0;
 
   document.getElementById('resumen-rapido').innerHTML = `
   <div class="stat-card glass">
-    <div class="stat-valor">${pendientes + Math.min(nuevos, CONFIG.maxNuevosPorSesion)}</div>
+    <div class="stat-valor">${pendientes + Math.min(nuevos, CONFIG.maxNuevosPorSesion) + retos}</div>
     <div class="stat-label">${T.stats.pendientes}</div>
   </div>
   <div class="stat-card glass">
@@ -520,14 +648,15 @@ function renderInicio() {
   if (enCooldown) {
     btn.disabled = true;
     const restanteMs = COOLDOWN_SESION - tiempoDesdeUltima;
-    const horas = Math.floor(restanteMs / (60 * 60 * 1000));
-    const minutos = Math.ceil((restanteMs % (60 * 60 * 1000)) / (60 * 1000));
+    let horas = Math.floor(restanteMs / (60 * 60 * 1000));
+    let minutos = Math.round((restanteMs % (60 * 60 * 1000)) / (60 * 1000));
+    if (minutos === 60) { horas++; minutos = 0; }
     const textoTiempo = CONFIG.modoPrueba
       ? `${Math.ceil(restanteMs / 1000)}s`
       : horas > 0 ? `${horas}h ${minutos}min` : `${minutos}min`;
     btn.textContent = T.enCooldown(textoTiempo);
   } else {
-    const hayQueHacer = pendientes > 0 || nuevos > 0;
+    const hayQueHacer = pendientes > 0 || nuevos > 0 || retos > 0;
     if (!hayQueHacer) {
       const algunoDisponible = items.length > 0;
       btn.disabled = !algunoDisponible;
@@ -554,26 +683,36 @@ function renderInicio() {
 // ═══════════════════════════════════════════════════════
 // BUCLE DE SESIÓN
 // ═══════════════════════════════════════════════════════
-function iniciarSesion() {
+function iniciarSesion(opciones = {}) {
   const perfil = obtenerPerfilActivo();
   if (!perfil) return;
 
-  const cola = construirSesion(perfil);
+  const esExtra = !!opciones.esExtra;
+  const objetivo = esExtra ? CONFIG.extraPorRonda : CONFIG.itemsPorSesion;
+
+  // Los retos (fichas graduadas que ya toca confirmar) solo entran en la sesión diaria
+  const retos = esExtra ? [] : seleccionarRetos(perfil);
+  const cola = [...construirSesion(perfil, objetivo), ...retos];
   if (cola.length === 0) return;
 
-  sesion.cola = cola;
+  sesion.cola = mezclar(cola);
   sesion.repesca = [];
-  sesion.yaRepescados = new Set();
   sesion.itemActual = null;
+  sesion.orientacionActual = null;
+  sesion.retoKeys = new Set(retos.map(i => claveCanonica(i.t, i.f)));
   sesion.totalPreguntas = cola.length;
   sesion.preguntaActual = 0;
   sesion.enRepesca = false;
-  sesion.stats = { aciertos: 0, fallos: 0, rachaActual: 0, rachaMax: 0, velocidadRachaActual: 0, tiempos: [], itemsFallados: [] };
+  sesion.rondaRepesca = 0;
+  sesion.esExtra = esExtra;
+  sesion.stats = { aciertos: 0, fallos: 0, repescasSuperadas: 0, rachaActual: 0, rachaMax: 0, velocidadRachaActual: 0, tiempos: [], itemsFallados: [] };
   sesion.t0 = 0;
   sesion.inicioSesion = ahora();
 
   inputActual = '';
   feedbackActivo = false;
+  corrigiendo = false;
+  intentosFallidos = {};
 
   mostrarPantalla('pantalla-practica');
   siguientePregunta();
@@ -585,6 +724,7 @@ function siguientePregunta() {
       sesion.cola = mezclar([...sesion.repesca]);
       sesion.repesca = [];
       sesion.enRepesca = true;
+      sesion.rondaRepesca++;
     } else {
       terminarSesion();
       return;
@@ -593,17 +733,30 @@ function siguientePregunta() {
 
   sesion.itemActual = sesion.cola.shift();
   sesion.preguntaActual++;
+  sesion.orientacionActual = orientar(sesion.itemActual, obtenerPerfilActivo());
   inputActual = '';
+  corrigiendo = false;
 
   renderPregunta();
   sesion.t0 = ahora();
 }
 
-function renderPregunta() {
+// Muestra el chip «🎓 Reto» solo si la ficha actual es una graduada en mantenimiento
+function actualizarBadgeReto() {
+  const badge = document.getElementById('reto-badge');
   const item = sesion.itemActual;
+  if (!badge) return;
+  badge.hidden = !(item && sesion.retoKeys.has(claveCanonica(item.t, item.f)));
+}
+
+function renderPregunta() {
+  const { t, f } = sesion.orientacionActual;
   const el = document.getElementById('pregunta-texto');
-  el.innerHTML = `${item.t} <span style="color:var(--text-secondary)">×</span> ${item.f} <span style="color:var(--text-secondary)">=</span> <span class="interrogante">?</span>`;
+  el.innerHTML = `${t} <span style="color:var(--text-secondary)">×</span> ${f} <span style="color:var(--text-secondary)">=</span> <span class="interrogante">?</span>`;
   el.className = 'pregunta slide-in';
+  actualizarBadgeReto();
+
+  document.getElementById('pantalla-practica').classList.remove('corrigiendo');
 
   const zona = document.getElementById('zona-pregunta');
   zona.className = 'zona-pregunta glass';
@@ -621,6 +774,7 @@ function agregarDigito(d) {
   if (inputActual.length >= 3) return;
   inputActual += d;
   actualizarDisplay();
+  if (corrigiendo) comprobarCorreccion();
 }
 
 function borrarDigito() {
@@ -636,6 +790,8 @@ function actualizarDisplay() {
 
 function confirmarRespuesta() {
   if (feedbackActivo) return;
+  // En modo corrección se avanza solo al escribir el resultado correcto
+  if (corrigiendo) return;
   if (inputActual === '') {
     document.getElementById('input-respuesta').classList.add('shake');
     setTimeout(() => document.getElementById('input-respuesta').classList.remove('shake'), 400);
@@ -644,32 +800,46 @@ function confirmarRespuesta() {
 
   const respuestaUsuario = parseInt(inputActual, 10);
   const item = sesion.itemActual;
-  const respuestaCorrecta = item.t * item.f;
+  const { t, f } = sesion.orientacionActual;
+  const respuestaCorrecta = t * f;
   const esCorrecto = respuestaUsuario === respuestaCorrecta;
   const ms = ahora() - sesion.t0;
   const resultado = clasificar(esCorrecto, ms);
+  const key = claveCanonica(item.t, item.f);
 
-  actualizarItem(item, resultado);
+  // Un segundo fallo de la misma ficha en la sesión (repesca) sí la reinicia del todo
+  const repetido = !!intentosFallidos[key];
+  actualizarItem(item, resultado, repetido);
 
   if (resultado === 'fallo') {
-    sesion.stats.fallos++;
+    const primerFallo = !intentosFallidos[key];
+    intentosFallidos[key] = (intentosFallidos[key] || 0) + 1;
+
+    if (primerFallo) {
+      // Solo el primer fallo de cada tarjeta cuenta como fallo de la sesión:
+      // así el bucle de repescas no hunde el porcentaje
+      sesion.stats.fallos++;
+      sesion.stats.itemsFallados.push({
+        t, f,
+        respuestaUsuario,
+        respuestaCorrecta,
+      });
+    } else {
+      // En repesca no penaliza: solo refrescamos la última respuesta errónea
+      const reg = sesion.stats.itemsFallados.find(x => claveCanonica(x.t, x.f) === key);
+      if (reg) reg.respuestaUsuario = respuestaUsuario;
+    }
+
     sesion.stats.rachaActual = 0;
     sesion.stats.velocidadRachaActual = 0;
-    sesion.stats.itemsFallados.push({
-      t: item.t, f: item.f,
-      respuestaUsuario,
-      respuestaCorrecta,
-    });
-    const key = `${item.t}x${item.f}`;
-    if (!sesion.yaRepescados.has(key)) {
-      sesion.repesca.push(item);
-      sesion.yaRepescados.add(key);
-    }
+    // Repesca ilimitada: la tarjeta vuelve al final las veces que haga falta
+    sesion.repesca.push(item);
   } else {
     sesion.stats.aciertos++;
+    if (sesion.enRepesca) sesion.stats.repescasSuperadas++;
     sesion.stats.rachaActual++;
     sesion.stats.rachaMax = Math.max(sesion.stats.rachaMax, sesion.stats.rachaActual);
-    if (resultado === 'facil') {
+    if (resultado === 'instantaneo' || resultado === 'automatico') {
       sesion.stats.velocidadRachaActual++;
     } else {
       sesion.stats.velocidadRachaActual = 0;
@@ -682,65 +852,110 @@ function confirmarRespuesta() {
   mostrarFeedback(item, resultado, respuestaCorrecta);
 }
 
+// Escribe el resultado correcto para poder seguir (sin temporizador)
+function comprobarCorreccion() {
+  const item = sesion.itemActual;
+  if (!item) return;
+  const { t, f } = sesion.orientacionActual;
+  const correcta = String(t * f);
+  const inputEl = document.getElementById('input-respuesta');
+
+  if (inputActual === correcta) {
+    corrigiendo = false;
+    feedbackActivo = true;
+    document.getElementById('cursor').hidden = true;
+    document.getElementById('zona-pregunta').className = 'zona-pregunta glass pregunta-acierto';
+    document.getElementById('pregunta-texto').innerHTML = `<div class="fb-acierto">${T.feedback.copiado}</div>`;
+    inputEl.className = 'input-display glass input-acierto';
+    pitido(880);
+    feedbackTimer = setTimeout(avanzarDesdeFeedback, 800);
+    return;
+  }
+
+  // Si lo escrito no va camino del resultado, se le anima a intentarlo otra vez
+  if (!correcta.startsWith(inputActual)) {
+    inputActual = '';
+    actualizarDisplay();
+    inputEl.classList.add('shake');
+    setTimeout(() => inputEl.classList.remove('shake'), 400);
+  }
+}
+
 function mostrarFeedback(item, resultado, respuestaCorrecta) {
-  feedbackActivo = true;
   const pregEl = document.getElementById('pregunta-texto');
   const zona = document.getElementById('zona-pregunta');
   const inputEl = document.getElementById('input-respuesta');
-  document.getElementById('cursor').hidden = true;
+  const cursor = document.getElementById('cursor');
+
+  // ── Fallo: modo corrección, sin temporizador ──
+  if (resultado === 'fallo') {
+    feedbackActivo = false;
+    corrigiendo = true;
+
+    const { t, f } = sesion.orientacionActual;
+    const key = claveCanonica(item.t, item.f);
+    const n = intentosFallidos[key] || 1;
+    const mensajes = T.feedback.repescaMensajes;
+    const animo = n >= 2
+      ? `<div class="fb-animo">${mensajes[Math.min(n - 2, mensajes.length - 1)]}</div>`
+      : '';
+
+    zona.className = 'zona-pregunta glass pregunta-error';
+    pregEl.innerHTML = `
+    <div class="fb-error">
+      <div class="fb-operacion">${t} × ${f} =</div>
+      <div class="fb-resultado">${respuestaCorrecta}</div>
+      <div class="fb-recordatorio">${pick(T.feedback.memoriza)}</div>
+      ${animo}
+      <div class="fb-copiar">${T.feedback.copiar}</div>
+      <div class="fb-pista">💡 ${generarPista(t, f)}</div>
+    </div>`;
+    inputEl.className = 'input-display glass input-correccion';
+    document.getElementById('pantalla-practica').classList.add('corrigiendo');
+    pitido(220, 0.25);
+
+    inputActual = '';
+    actualizarDisplay();
+    cursor.hidden = false;
+    return;
+  }
+
+  // ── Acierto: feedback breve y avance automático ──
+  feedbackActivo = true;
+  cursor.hidden = true;
 
   let duracion;
 
-  if (resultado === 'facil') {
+  if (resultado === 'instantaneo') {
     zona.className = 'zona-pregunta glass pregunta-acierto';
     pregEl.innerHTML = `<div class="fb-acierto">${T.feedback.facil}</div>`;
     inputEl.className = 'input-display glass input-acierto';
     pitido(880);
     duracion = 1200;
-  } else if (resultado === 'bien') {
+  } else if (resultado === 'automatico') {
     zona.className = 'zona-pregunta glass pregunta-acierto';
     pregEl.innerHTML = `<div class="fb-acierto">${T.feedback.bien}</div>`;
     inputEl.className = 'input-display glass input-acierto';
     pitido(660);
     duracion = 1200;
   } else {
-    zona.className = 'zona-pregunta glass pregunta-error';
-    pregEl.innerHTML = `
-    <div>
-      <div class="fb-correccion">${item.t} × ${item.f} = <strong>${respuestaCorrecta}</strong></div>
-      <div class="fb-pista">💡 ${generarPista(item.t, item.f)}</div>
-    </div>`;
-    inputEl.className = 'input-display glass input-error';
-    pitido(220, 0.25);
-    duracion = 3500;
+    // Titubeante: acertó, pero sin automaticidad
+    zona.className = 'zona-pregunta glass pregunta-acierto';
+    pregEl.innerHTML = `<div class="fb-acierto">${T.feedback.titubeante}</div>`;
+    inputEl.className = 'input-display glass input-acierto';
+    pitido(560);
+    duracion = 1200;
   }
 
-  // Auto-avance
   feedbackTimer = setTimeout(avanzarDesdeFeedback, duracion);
-
-  // Manual skip para errores (después de 1s)
-  if (resultado === 'fallo') {
-    setTimeout(() => {
-      if (!feedbackActivo) return;
-      const handler = (e) => {
-        if (e.type === 'keydown' && e.key === 'Tab') return; // no interceptar Tab
-        avanzarDesdeFeedback();
-      };
-      skipListeners = [
-        { type: 'pointerdown', fn: handler },
-        { type: 'keydown', fn: handler },
-      ];
-      skipListeners.forEach(l => document.addEventListener(l.type, l.fn, { once: true }));
-    }, 1000);
-  }
 }
 
 function avanzarDesdeFeedback() {
   if (!feedbackActivo) return;
   feedbackActivo = false;
+  corrigiendo = false;
   clearTimeout(feedbackTimer);
-  skipListeners.forEach(l => document.removeEventListener(l.type, l.fn));
-  skipListeners = [];
+  feedbackTimer = null;
 
   actualizarRacha();
   siguientePregunta();
@@ -754,7 +969,7 @@ function actualizarBarraProgreso() {
     const restantes = sesion.cola.length + 1;
     fill.style.width = '100%';
     fill.classList.add('repesca');
-    texto.textContent = T.repesca(restantes);
+    texto.textContent = T.repesca(sesion.rondaRepesca, restantes);
   } else {
     const pct = sesion.totalPreguntas > 0
       ? Math.min(100, (sesion.preguntaActual / sesion.totalPreguntas) * 100)
@@ -787,14 +1002,30 @@ function terminarSesion() {
     ? Math.round(sesion.stats.tiempos.reduce((a, b) => a + b, 0) / sesion.stats.tiempos.length)
     : 0;
 
-  // Guardar sesión
-  perfil.sesiones.push({
-    fecha: ahora(),
-    aciertos: sesion.stats.aciertos,
-    fallos: sesion.stats.fallos,
-    tiempoMedio,
-    duracion: ahora() - sesion.inicioSesion,
-  });
+  const duracion = ahora() - sesion.inicioSesion;
+
+  // Las rondas extra se suman a la sesión del día (no cuentan como sesión nueva)
+  if (sesion.esExtra && perfil.sesiones.length > 0) {
+    const ultima = perfil.sesiones[perfil.sesiones.length - 1];
+    const preguntasPrev = ultima.aciertos + ultima.fallos;
+    const preguntasRonda = sesion.stats.aciertos + sesion.stats.fallos;
+    const totalPreguntas = preguntasPrev + preguntasRonda;
+    ultima.tiempoMedio = totalPreguntas > 0
+      ? Math.round((ultima.tiempoMedio * preguntasPrev + tiempoMedio * preguntasRonda) / totalPreguntas)
+      : tiempoMedio;
+    ultima.aciertos += sesion.stats.aciertos;
+    ultima.fallos += sesion.stats.fallos;
+    ultima.duracion += duracion;
+    ultima.fecha = ahora();
+  } else {
+    perfil.sesiones.push({
+      fecha: ahora(),
+      aciertos: sesion.stats.aciertos,
+      fallos: sesion.stats.fallos,
+      tiempoMedio,
+      duracion,
+    });
+  }
 
   perfil.rachaMaxima = Math.max(perfil.rachaMaxima || 0, sesion.stats.rachaMax);
 
@@ -815,6 +1046,28 @@ function terminarSesion() {
 // ═══════════════════════════════════════════════════════
 // RENDERIZADO: RESUMEN
 // ═══════════════════════════════════════════════════════
+// Panel que aparece al terminar la sesión para practicar 5 tarjetas más
+function renderPanelExtraResumen() {
+  const panel = document.getElementById('extra-resumen');
+  if (!panel) return;
+
+  const perfil = obtenerPerfilActivo();
+  if (!perfil || construirSesion(perfil, CONFIG.extraPorRonda).length === 0) {
+    panel.hidden = true;
+    return;
+  }
+
+  panel.hidden = false;
+  panel.innerHTML = `
+    <div class="extra-sesion-titulo">${T.extra.titulo}</div>
+    <p class="extra-sesion-desc">${T.extra.desc}</p>
+    <div class="extra-sesion-aviso">${T.extra.aviso}</div>
+    <div class="extra-sesion-botones">
+      <button class="btn-secundario btn-extra" id="btn-extra-ronda">${T.extra.anadir5}</button>
+    </div>
+  `;
+}
+
 function renderResumen(stats, tiempoMedio, nuevasMedallas, desbloquear) {
   const total = stats.aciertos + stats.fallos;
   const pct = total > 0 ? Math.round(stats.aciertos / total * 100) : 0;
@@ -848,22 +1101,29 @@ function renderResumen(stats, tiempoMedio, nuevasMedallas, desbloquear) {
     <div class="resumen-stat-valor">${tiempoSeg}s</div>
     <div class="resumen-stat-label">${T.stats.tiempoMedio}</div>
   </div>
+  <div class="resumen-stat glass">
+    <div class="resumen-stat-valor" style="color:var(--accent)">${stats.repescasSuperadas || 0}</div>
+    <div class="resumen-stat-label">${T.stats.repescas}</div>
+  </div>
 `;
 
-  // Items fallados
+  // Items fallados (una sola vez por tarjeta, con el nº de intentos)
   const fallados = document.getElementById('resumen-fallados');
   if (stats.itemsFallados.length > 0) {
     fallados.innerHTML = `
     <div class="resumen-fallados-titulo">${T.resumen.fallados}</div>
-    ${stats.itemsFallados.map(f => `
+    ${stats.itemsFallados.map(f => {
+      const veces = intentosFallidos[claveCanonica(f.t, f.f)] || 1;
+      return `
       <div class="fallo-item glass">
-        <span class="fallo-pregunta">${f.t} × ${f.f}</span>
+        <span class="fallo-pregunta">${f.t} × ${f.f}${veces > 1 ? ` <span class="fallo-veces">×${veces}</span>` : ''}</span>
         <span>
           <span class="fallo-tuya">${f.respuestaUsuario}</span>
           <span class="fallo-respuesta">${f.respuestaCorrecta}</span>
         </span>
       </div>
-    `).join('')}
+    `;
+    }).join('')}
   `;
   } else {
     fallados.innerHTML = `<p class="subtitulo">${T.resumen.sinFallos}</p>`;
@@ -896,13 +1156,13 @@ function renderResumen(stats, tiempoMedio, nuevasMedallas, desbloquear) {
   else mensajes = T.motivacion.animo;
   document.getElementById('resumen-mensaje').textContent = pick(mensajes);
 
-  // Si desbloqueo disponible
-  if (desbloquear) {
-    const aviso = document.createElement('div');
-    aviso.className = 'aviso-desbloqueo';
-    aviso.innerHTML = `<p>${T.desbloqueo.mensaje}</p><button class="btn-secundario" id="btn-desbloquear-resumen">${T.desbloqueo.boton}</button>`;
-    document.getElementById('resumen-fallados').after(aviso);
-  }
+  // Desbloqueo de tablas 11-12
+  document.getElementById('resumen-desbloqueo').innerHTML = desbloquear
+    ? `<div class="aviso-desbloqueo"><p>${T.desbloqueo.mensaje}</p><button class="btn-secundario" id="btn-desbloquear-resumen">${T.desbloqueo.boton}</button></div>`
+    : '';
+
+  // Panel para practicar 5 tarjetas más
+  renderPanelExtraResumen();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -913,10 +1173,10 @@ function renderProgreso() {
   if (!perfil) return;
 
   const tabs = tablasActivas(perfil);
-  const items = Object.values(perfil.items).filter(i => tabs.includes(i.t));
+  const items = paresVisibles(perfil);
   const now = ahora();
-  const dominados = items.filter(i => i.escalon >= 4).length;
-  const pendientes = items.filter(i => i.ultimaVez !== null && i.proximaRevision <= now).length;
+  const dominados = items.filter(i => i.escalon >= CONFIG.escalonDominada).length;
+  const pendientes = items.filter(i => !i.graduada && i.ultimaVez !== null && i.proximaRevision <= now).length;
   const pct = items.length > 0 ? Math.round(dominados / items.length * 100) : 0;
 
   // Stats
@@ -938,8 +1198,9 @@ function renderProgreso() {
   // Mapa de calor
   renderMapaCalor(perfil, tabs);
 
-  // Leyenda
-  document.getElementById('leyenda-mapa').innerHTML = COLORES_ESCALON.map((color, i) => `
+  // Leyenda (8 niveles + estado graduada)
+  const coloresLeyenda = [...COLORES_ESCALON, COLOR_GRADUADA];
+  document.getElementById('leyenda-mapa').innerHTML = coloresLeyenda.map((color, i) => `
   <div class="leyenda-item">
     <div class="leyenda-color" style="background:${color}"></div>
     <span>${T.leyenda[i]}</span>
@@ -975,18 +1236,21 @@ function renderMapaCalor(perfil, tabs) {
   for (const t of tabs) {
     html += `<tr><th>${t}</th>`;
     for (const f of CONFIG.factores) {
-      const key = `${t}x${f}`;
+      const key = claveCanonica(t, f);
       const item = perfil.items[key];
       let color, titulo;
       if (!item) {
         color = COLORES_ESCALON[0];
         titulo = `${t}×${f} — No disponible`;
+      } else if (item.graduada) {
+        color = COLOR_GRADUADA;
+        titulo = `${t}×${f}=${t * f} — 🎓 Graduada · ${item.aciertos}✓ ${item.fallos}✗`;
       } else if (item.ultimaVez === null) {
         color = COLORES_ESCALON[0];
         titulo = `${t}×${f}=${t * f} — No practicada`;
       } else {
         color = COLORES_ESCALON[Math.min(item.escalon + 1, COLORES_ESCALON.length - 1)];
-        titulo = `${t}×${f}=${t * f} — Escalón ${item.escalon} · ${item.aciertos}✓ ${item.fallos}✗`;
+        titulo = `${t}×${f}=${t * f} — Nivel ${item.escalon + 1} · ${item.aciertos}✓ ${item.fallos}✗`;
       }
       html += `<td style="background:${color}" title="${titulo}"></td>`;
     }
@@ -1249,6 +1513,13 @@ document.getElementById('btn-cambiar-perfil').addEventListener('click', () => {
   mostrarPantalla('pantalla-perfiles');
 });
 
+// ---- Tarjetas extra: practicar 5 más tras terminar la sesión ----
+document.getElementById('extra-resumen').addEventListener('click', (e) => {
+  if (!e.target.closest('#btn-extra-ronda')) return;
+  initAudio();
+  iniciarSesion({ esExtra: true });
+});
+
 // ---- Desbloqueo tablas extendidas (delegado) ----
 document.addEventListener('click', (e) => {
   if (e.target.id === 'btn-desbloquear-ext' || e.target.id === 'btn-desbloquear-resumen') {
@@ -1342,12 +1613,15 @@ if (CONFIG.modoPrueba) {
     if (perfil) {
       console.table(Object.entries(perfil.items).map(([k, v]) => ({
         clave: k,
-        escalon: v.escalon,
+        nivel: v.escalon + 1,
+        dominada: v.escalon >= CONFIG.escalonDominada ? 'sí' : '',
+        graduada: v.graduada ? '🎓' : '',
         aciertos: v.aciertos,
         fallos: v.fallos,
         racha: v.racha,
         ultimaVez: v.ultimaVez ? new Date(v.ultimaVez).toLocaleString() : '—',
         proxRevision: v.proximaRevision ? new Date(v.proximaRevision).toLocaleString() : '—',
+        proximoReto: v.proximoReto ? new Date(v.proximoReto).toLocaleString() : '—',
       })));
     }
   });

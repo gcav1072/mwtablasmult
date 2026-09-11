@@ -19,8 +19,8 @@
     <!-- ═══════════════ PANTALLA: PERFILES ═══════════════ -->
     <section id="pantalla-perfiles" class="pantalla">
       <div class="contenedor">
-        <h1>🧮 Tablas de Multiplicar</h1>
-        <p class="subtitulo">Elige tu perfil para empezar</p>
+        <h1>¡Vamos a aprendernos las tablas de multiplicar!</h1>
+        <p class="subtitulo">Elige tu perfil para empezar:</p>
         <div id="lista-perfiles"></div>
         <div class="nuevo-perfil">
           <button id="btn-mostrar-nuevo" class="btn-nuevo-perfil" aria-label="Crear nuevo perfil">
@@ -46,8 +46,7 @@
           <button id="btn-empezar" class="btn-principal" aria-label="Empezar sesión">▶ Empezar sesión</button>
           <div class="botones-secundarios">
             <button id="btn-progreso" class="btn-secundario" aria-label="Ver mi progreso">📊 Mi progreso</button>
-            <button id="btn-cambiar-perfil" class="btn-secundario" aria-label="Cambiar de perfil">🔧 Cambiar
-              perfil</button>
+            <button id="btn-cambiar-perfil" class="btn-secundario" aria-label="Cambiar de perfil">🔧 Cambiar perfil</button>
           </div>
         </div>
         <div id="aviso-tablas-extendidas" class="aviso-desbloqueo" hidden></div>
@@ -69,6 +68,7 @@
         </div>
 
         <div id="zona-pregunta" class="zona-pregunta glass">
+          <div id="reto-badge" class="reto-badge" hidden>🎓 Reto</div>
           <div id="pregunta-texto" class="pregunta"></div>
         </div>
 
@@ -118,6 +118,8 @@
         <div id="resumen-fallados" class="resumen-fallados"></div>
         <div id="resumen-medallas" class="resumen-medallas" hidden></div>
         <p id="resumen-mensaje" class="mensaje-motivador"></p>
+        <div id="resumen-desbloqueo"></div>
+        <div id="extra-resumen" class="extra-sesion glass" hidden></div>
         <button id="btn-volver-inicio" class="btn-principal" aria-label="Volver al inicio">Volver al inicio</button>
       </div>
     </section>
