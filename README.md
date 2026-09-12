@@ -124,16 +124,6 @@ Para pruebas rápidas y desarrollo, la app cuenta con un panel de herramientas:
     - En móvil queda **plegado** tras la pestaña para no tapar botones.
   - Dentro del panel: avanzar días (`+1 día`), resetear el perfil activo o volcar el estado a la consola (`console.table`).
 - El panel de ajustes y el de debug son mutuamente excluyentes y se cierran con `Esc`, con la ✕ o pulsando fuera.
-
----
-
-## 🌐 Despliegue en GitHub Pages
-
-1. Sube este repositorio a GitHub.
-2. Ve a **Settings > Pages** dentro de tu repositorio.
-3. En **Source**, selecciona la rama `main` (o `master`) y la carpeta `/ (root)`.
-4. Guarda los cambios. En unos minutos tu aplicación estará publicada y accesible en internet.
-
 ---
 
 ## 📄 Licencia
