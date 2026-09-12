@@ -10,6 +10,23 @@ const T = {
     nuevo: 'Nuevo perfil',
     placeholder: 'Escribe tu nombre...',
   },
+  importar: {
+    ok: nombre => `Progreso de «${nombre}» importado correctamente.`,
+    errorArchivo: 'El archivo no contiene datos válidos.',
+    errorLeer: msg => `Error al leer el archivo: ${msg}`,
+    sobrescribir: nombre => `Ya existe un perfil llamado «${nombre}». ¿Quieres reemplazarlo con el del archivo?`,
+  },
+  ritmo: {
+    titulo: '¿Cuánto quieres practicar al día?',
+    nota: '💡 Podrás cambiarlo más adelante desde tu perfil y tus estadísticas.',
+    tarjetasDia: n => `${n} tarjetas/día`,
+    tiempo: min => `≈ ${min} min`,
+    nombres: { normal: 'Normal', rapido: 'Rápido', intenso: 'Intenso' },
+    // Pantalla de Progreso
+    progresoTitulo: '⚡ Tarjetas diarias',
+    progresoDesc: min => `Elige cuánto quieres practicar cada día. Tu sesión será de ≈ ${min} min.`,
+    guardado: '✅ Guardado',
+  },
   saludo: nombre => `¡Hola, ${nombre}! 👋`,
   empezar: '▶ Empezar sesión',
   todoAlDia: '🎉 ¡Todo al día! Vuelve mañana',
@@ -70,6 +87,76 @@ const T = {
     label: 'Incluir tablas del 11 y 12',
     auto: '✨ Desbloqueado',
   },
+  // Guía de bienvenida (se muestra al abrir la app hasta marcar "no mostrar de nuevo")
+  bienvenida: {
+    titulo: '👋 ¡Bienvenido a las Tablas de Multiplicar!',
+    tabs: { padres: '👨‍👩‍👧 Para padres', ninos: '🧒 Para niños' },
+    cerrar: '¡Entendido!',
+    noMostrar: 'No volver a mostrar esto al abrir la app',
+    reabrir: 'ℹ️ ¿Cómo funciona?',
+    padres: {
+      intro: 'Una app para que los niños de 9 a 12 años memoricen las tablas de multiplicar con repetición espaciada. Esta guía resume cómo funciona y qué esperar.',
+      bloques: [
+        {
+          icono: '🧠', titulo: 'Cómo funciona',
+          texto: 'Cada multiplicación tiene su propio nivel de dominio. Cuando el niño la acierta, la ficha sube un escalón y tarda más en volver (1, 3, 7, 14, 30, 60 y 90 días). Si falla, baja y reaparece antes. El resultado: repasa mucho lo difícil y poco lo que ya domina.',
+        },
+        {
+          icono: '⏱️', titulo: 'La velocidad importa',
+          texto: 'Si responde en menos de 1,5 s, se considera memoria y sube dos escalones de golpe. Hasta 4,5 s cuenta como respuesta automática y sube uno. Si tarda más, se acepta como correcta pero no avanza: todavía lo está calculando, no lo tiene memorizado.',
+        },
+        {
+          icono: '✍️', titulo: 'Si falla, escribe la respuesta',
+          texto: 'Al fallar no se avanza directamente: aparece el resultado correcto y el niño debe teclearlo para continuar. Esa ficha vuelve a salir al final de la sesión y se repite hasta que la acierte. Los fallos de esta "repesca" no penalizan sus estadísticas.',
+        },
+        {
+          icono: '⚡', titulo: 'El ritmo diario',
+          texto: 'Al crear el perfil se elige el ritmo: Normal (15 tarjetas), Rápido (20) o Intenso (30). Se puede cambiar cuando quiera desde Mi Progreso. Si un día quedan muchas fichas pendientes, la sesión las incluye todas.',
+        },
+        {
+          icono: '📅', titulo: 'Lo más importante: todos los días',
+          texto: 'Cinco o nueve minutos diarios funcionan muchísimo mejor que una sesión larga de vez en cuando. El sistema está diseñado para un ratito cada día; si se saltan días, se acumulan las fichas pendientes y el progreso se enlentece.',
+        },
+        {
+          icono: '💾', titulo: 'Los datos son locales',
+          texto: 'Todo el progreso se guarda en este dispositivo y navegador (no se envía a ningún servidor), y hay un breve bloqueo de 20 h entre sesiones para fomentar el hábito. Para cambiar de dispositivo, se puede Exportar el progreso desde Mi Progreso e Importarlo desde la pantalla de perfiles.',
+        },
+        {
+          icono: '📊', titulo: 'Seguimiento',
+          texto: 'En Mi Progreso hay un mapa de calor que colorea cada multiplicación según su nivel, además de medallas y estadísticas. Todo el progreso se puede exportar como archivo de respaldo.',
+        },
+      ],
+    },
+    ninos: {
+      intro: '¡Vas a practicar las tablas de multiplicar de una forma que se te van a quedar grabadas! Te explicamos cómo en 1 minuto.',
+      bloques: [
+        {
+          icono: '🖊️', titulo: 'Cómo responder',
+          texto: 'Te sale una multiplicación, como 7 × 8. Toca los números del teclado (o usa el teclado del ordenador) y pulsa el botón ✓ para responder.',
+        },
+        {
+          icono: '⚡', titulo: 'Si aciertas',
+          texto: '¡Aparece un mensaje y pasas a la siguiente! Cuanto más rápido contestes sin pensarlo, más cerca estará esa multiplicación de estar dominada. Es como un videojuego: intenta superarte.',
+        },
+        {
+          icono: '🔥', titulo: 'Si fallas',
+          texto: '¡No pasa nada, así se aprende! Te mostramos el resultado para que lo mires bien, y después lo escribes tú para poder seguir. Esa multiplicación volverá a salir al final de la sesión y se repetirá hasta que la aciertes.',
+        },
+        {
+          icono: '🏅', titulo: 'Medallas y rachas',
+          texto: 'Vas a ganar medallas: ⚡ por responder rápido varias veces seguidas, 🔥 por acertar muchas seguidas, 🏆 por dominar tablas enteras y 🎓 por las que ya nunca se te olvidan. ¡Intenta conseguirlas todas!',
+        },
+        {
+          icono: '📅', titulo: 'El truco de los campeones',
+          texto: 'Practica TODOS LOS DÍAS. Con 5 minutitos al día es suficiente. Estudiar un montón un solo día no funciona tan bien como practicar un poquito cada día.',
+        },
+        {
+          icono: '💪', titulo: '¿Con ganas de más?',
+          texto: 'Cuando termines la sesión puedes pulsar el botón "+5 tarjetas" para seguir un rato más. ¡Solo si te apetece!',
+        },
+      ],
+    },
+  },
   extra: {
     titulo: '💪 ¿Quieres practicar un poco más?',
     desc: 'Puedes hacer 5 tarjetas más ahora mismo. ¡Solo si te ves con energía!',
@@ -108,14 +195,13 @@ const CONFIG = {
   tablas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   tablasExtendidas: [11, 12],
   factores: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-  itemsPorSesion: 15,
   extraPorRonda: 5,
   maxNuevosPorSesion: 5,
   // 7 niveles de dominio (índice 0..6 = Nivel 1..7)
   escalonesDias: [1, 3, 7, 14, 30, 60, 90],
   // Tramos de latencia: premia la evocación automática y frena el cálculo secuencial
   umbralInstantaneoMs: 1500,
-  umbralAutomaticoMs: 3000,
+  umbralAutomaticoMs: 4500,
   // A partir de este nivel (0-indexado) la ficha cuenta como "Dominada"
   escalonDominada: 4,
   // Fichas graduadas: reaparecen como "retos" de mantenimiento cada N días
@@ -125,23 +211,37 @@ const CONFIG = {
   umbralDesbloqueo: 0.8,
 };
 
+// Ritmos de estudio: cada perfil guarda uno y define su sesión diaria base.
+// El número es el mínimo de tarjetas al día; si hay más vencidas, la sesión las incluye todas.
+const RITMOS = [
+  { id: 'normal', tarjetas: 15, emoji: '🌤️' },
+  { id: 'rapido', tarjetas: 20, emoji: '🚀' },
+  { id: 'intenso', tarjetas: 30, emoji: '🔥' },
+];
+const RITMO_DEFECTO = 'normal';
+// Estimación mostrada en el selector ("≈ X min"): segundos medios por tarjeta
+const SEGUNDOS_POR_TARJETA = 18;
+
 const DIA = CONFIG.modoPrueba ? 10_000 : 86_400_000;
 const COOLDOWN_SESION = CONFIG.modoPrueba ? DIA : 20 * 60 * 60 * 1000; // 20h en prod, 1 DIA en debug
 
 // ═══════════════════════════════════════════════════════
-// COLORES
+// COLORES DEL MAPA DE CALOR
 // ═══════════════════════════════════════════════════════
+// Los colores viven en tokens CSS (--heat-*) para que sean idénticos en modo
+// claro y oscuro; solo la celda "no practicada" cambia de tono según el tema.
+// Cada nivel tiene una tonalidad claramente distinta de la anterior y la siguiente.
 const COLORES_ESCALON = [
-  '#1e293b', // nunca practicada
-  '#ef4444', // nivel 1 · 1 día
-  '#f97316', // nivel 2 · 3 días
-  '#eab308', // nivel 3 · 7 días
-  '#84cc16', // nivel 4 · 14 días
-  '#22c55e', // nivel 5 · 30 días (dominada)
-  '#14b8a6', // nivel 6 · 60 días
-  '#3b82f6', // nivel 7 · 90 días
+  'var(--heat-0)', // nunca practicada
+  'var(--heat-1)', // nivel 1 · 1 día
+  'var(--heat-2)', // nivel 2 · 3 días
+  'var(--heat-3)', // nivel 3 · 7 días
+  'var(--heat-4)', // nivel 4 · 14 días
+  'var(--heat-5)', // nivel 5 · 30 días (dominada)
+  'var(--heat-6)', // nivel 6 · 60 días
+  'var(--heat-7)', // nivel 7 · 90 días
 ];
-const COLOR_GRADUADA = '#f59e0b'; // 🎓 dorado: dominio a largo plazo confirmado
+const COLOR_GRADUADA = 'var(--heat-grad)'; // 🎓 dominio a largo plazo confirmado
 // Celda "no practicada": usa un token CSS para adaptarse al tema claro/oscuro
 const HEAT_0 = 'var(--heat-0)';
 
@@ -170,6 +270,7 @@ let feedbackTimer = null;
 let corrigiendo = false;
 let intentosFallidos = {};
 let inputActual = '';
+let avisoTimer = null;
 let audioCtx = null;
 let debugTimeOffset = 0;
 let pendingDeleteName = null;
@@ -248,7 +349,7 @@ function crearItem(a, b) {
   };
 }
 
-function crearPerfil(nombre) {
+function crearPerfil(nombre, ritmo) {
   const items = {};
   for (const t of CONFIG.tablas) {
     for (const f of CONFIG.factores) {
@@ -257,12 +358,30 @@ function crearPerfil(nombre) {
   }
   return {
     creado: ahora(),
+    // Ritmo elegido al crear el perfil: define el tamaño base de la sesión diaria
+    ritmo: ritmo || RITMO_DEFECTO,
     tablasExtendidas: false,
     items,
     sesiones: [],
     medallas: [],
     rachaMaxima: 0,
   };
+}
+
+// Ritmo de un perfil. Los perfiles antiguos (sin `ritmo`) usan el ritmo por defecto.
+function ritmoDe(perfil) {
+  const id = perfil && perfil.ritmo;
+  return RITMOS.find(r => r.id === id) || RITMOS.find(r => r.id === RITMO_DEFECTO);
+}
+
+// Tarjetas base al día según el ritmo del perfil
+function tarjetasBase(perfil) {
+  return ritmoDe(perfil).tarjetas;
+}
+
+// Tiempo estimado de sesión, redondeado al minuto
+function minutosEstimados(tarjetas) {
+  return Math.max(1, Math.round(tarjetas * SEGUNDOS_POR_TARJETA / 60));
 }
 
 function obtenerPerfilActivo() {
@@ -320,7 +439,7 @@ function orientar(item, perfil) {
 // ═══════════════════════════════════════════════════════
 // No van por perfil: son ajustes del navegador/dispositivo.
 const CLAVE_PREFS = 'tablas_prefs_v1';
-const PREFS_DEFECTO = { version: 1, sonido: true, tema: 'system' };
+const PREFS_DEFECTO = { version: 1, sonido: true, tema: 'system', bienvenida: true };
 let PREFS = { ...PREFS_DEFECTO };
 
 const mqTemaClaro = window.matchMedia
@@ -412,8 +531,8 @@ function sonidoMedalla() {
 // ALGORITMO DE REPETICIÓN ESPACIADA
 // ═══════════════════════════════════════════════════════
 // ── Clasificación por latencia ──
-// instantaneo (<1,5s): evocación directa  ·  automatico (1,5-3s): automatizado
-// titubeante (>3s): acierta pero calculando  ·  fallo
+// instantaneo (<1,5s): evocación directa  ·  automatico (1,5-4,5s): automatizado
+// titubeante (>4,5s): acierta pero calculando  ·  fallo
 function clasificar(esCorrecto, ms) {
   if (!esCorrecto) return 'fallo';
   if (ms < CONFIG.umbralInstantaneoMs) return 'instantaneo';
@@ -601,7 +720,7 @@ function verificarMedallas(perfil, stats) {
   // Graduación (5 fichas con dominio a largo plazo confirmado)
   if (allItems.filter(i => i.graduada).length >= 5) dar('graduacion');
 
-  // Velocista (5 respuestas automáticas seguidas: ≤3s)
+  // Velocista (5 respuestas automáticas seguidas: ≤4,5s)
   if (stats.velocidadRachaActual >= 5) dar('velocista');
 
   // Estudioso (10 sesiones)
@@ -634,7 +753,7 @@ function renderPerfiles() {
   const nombres = Object.keys(ESTADO.perfiles);
 
   if (nombres.length === 0) {
-    lista.innerHTML = '<p class="subtitulo" style="padding:20px 0">Crea tu primer perfil para empezar 🎓</p>';
+    lista.innerHTML = '<p class="subtitulo" style="padding:20px 0">Crea tu primer perfil o importa uno para empezar 🎓</p>';
     return;
   }
 
@@ -644,13 +763,14 @@ function renderPerfiles() {
     const dominados = items.filter(i => i.escalon >= CONFIG.escalonDominada).length;
     const pct = items.length > 0 ? Math.round(dominados / items.length * 100) : 0;
     const sesiones = perfil.sesiones ? perfil.sesiones.length : 0;
+    const base = tarjetasBase(perfil);
 
     return `
     <div class="perfil-card glass" data-perfil="${esc(nombre)}">
       <div class="perfil-avatar">${nombre.charAt(0)}</div>
       <div class="perfil-info">
         <div class="perfil-nombre">${esc(nombre)}</div>
-        <div class="perfil-detalle">${pct}% dominado · ${sesiones} sesión${sesiones !== 1 ? 'es' : ''}</div>
+        <div class="perfil-detalle">${T.ritmo.tarjetasDia(base)} · ${pct}% dominado · ${sesiones} ${sesiones === 1 ? 'sesión' : 'sesiones'}</div>
       </div>
       <button class="btn-icono btn-eliminar-perfil" data-nombre="${esc(nombre)}" aria-label="Eliminar perfil de ${esc(nombre)}">🗑️</button>
     </div>
@@ -662,6 +782,26 @@ function esc(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════
+// PLAN DE LA SESIÓN DE HOY
+// ═══════════════════════════════════════════════════════
+// La sesión hace al menos las tarjetas del ritmo del perfil, pero si hay más
+// fichas vencidas de las previstas las incluye TODAS para no dejar deberes atrás.
+// El número que muestra "Para hoy" es exactamente el que tendrá la sesión.
+function planSesionHoy(perfil) {
+  const now = ahora();
+  const items = paresVisibles(perfil);
+  const activos = items.filter(i => !i.graduada);
+  const pendientes = activos.filter(i => i.ultimaVez !== null && i.proximaRevision <= now).length;
+  const nuevos = activos.filter(i => i.ultimaVez === null).length;
+  const nuevosEnSesion = Math.min(nuevos, CONFIG.maxNuevosPorSesion);
+  const retos = Math.min(retosVencidos(perfil).length, CONFIG.maxRetosPorSesion);
+  // Objetivo de fichas activas (sin retos): la base del ritmo, o todas las vencidas + nuevas
+  const objetivo = Math.max(tarjetasBase(perfil), pendientes + nuevosEnSesion);
+  const total = Math.min(objetivo, activos.length) + retos;
+  return { pendientes, nuevos, nuevosEnSesion, retos, objetivo, total };
 }
 
 // ═══════════════════════════════════════════════════════
@@ -677,16 +817,14 @@ function renderInicio() {
   // Stats rápidas
   const now = ahora();
   const items = paresVisibles(perfil);
-  const pendientes = items.filter(i => !i.graduada && i.ultimaVez !== null && i.proximaRevision <= now).length;
-  const nuevos = items.filter(i => !i.graduada && i.ultimaVez === null).length;
-  const retos = retosVencidos(perfil).length;
+  const plan = planSesionHoy(perfil);
   const dominados = items.filter(i => i.escalon >= CONFIG.escalonDominada).length;
   const total = items.length;
   const pct = total > 0 ? Math.round(dominados / total * 100) : 0;
 
   document.getElementById('resumen-rapido').innerHTML = `
   <div class="stat-card glass">
-    <div class="stat-valor">${pendientes + Math.min(nuevos, CONFIG.maxNuevosPorSesion) + retos}</div>
+    <div class="stat-valor">${plan.total}</div>
     <div class="stat-label">${T.stats.pendientes}</div>
   </div>
   <div class="stat-card glass">
@@ -718,7 +856,7 @@ function renderInicio() {
       : horas > 0 ? `${horas}h ${minutos}min` : `${minutos}min`;
     btn.textContent = T.enCooldown(textoTiempo);
   } else {
-    const hayQueHacer = pendientes > 0 || nuevos > 0 || retos > 0;
+    const hayQueHacer = plan.pendientes > 0 || plan.nuevos > 0 || plan.retos > 0;
     if (!hayQueHacer) {
       const algunoDisponible = items.length > 0;
       btn.disabled = !algunoDisponible;
@@ -750,7 +888,8 @@ function iniciarSesion(opciones = {}) {
   if (!perfil) return;
 
   const esExtra = !!opciones.esExtra;
-  const objetivo = esExtra ? CONFIG.extraPorRonda : CONFIG.itemsPorSesion;
+  // La sesión diaria incluye todas las fichas vencidas (mínimo la base de 15)
+  const objetivo = esExtra ? CONFIG.extraPorRonda : planSesionHoy(perfil).objetivo;
 
   // Los retos (fichas graduadas que ya toca confirmar) solo entran en la sesión diaria
   const retos = esExtra ? [] : seleccionarRetos(perfil);
@@ -1236,9 +1375,8 @@ function renderProgreso() {
 
   const tabs = tablasActivas(perfil);
   const items = paresVisibles(perfil);
-  const now = ahora();
+  const plan = planSesionHoy(perfil);
   const dominados = items.filter(i => i.escalon >= CONFIG.escalonDominada).length;
-  const pendientes = items.filter(i => !i.graduada && i.ultimaVez !== null && i.proximaRevision <= now).length;
   const pct = items.length > 0 ? Math.round(dominados / items.length * 100) : 0;
 
   // Stats
@@ -1248,7 +1386,7 @@ function renderProgreso() {
     <div class="stat-label">${T.stats.dominadas}</div>
   </div>
   <div class="stat-card glass">
-    <div class="stat-valor">${pendientes}</div>
+    <div class="stat-valor">${plan.total}</div>
     <div class="stat-label">${T.stats.pendientes}</div>
   </div>
   <div class="stat-card glass">
@@ -1271,6 +1409,18 @@ function renderProgreso() {
 
   // Medallas
   renderMedallasProgreso(perfil);
+
+  // Selector de tarjetas diarias (ritmo)
+  document.getElementById('ritmo-wrapper').innerHTML = `
+  <div class="opcion-ritmo-cabecera">
+    <span class="opcion-ritmo-titulo">${T.ritmo.progresoTitulo}</span>
+    <span id="ritmo-guardado" class="ritmo-guardado" hidden>${T.ritmo.guardado}</span>
+  </div>
+  <p class="opcion-ritmo-sub">${T.ritmo.progresoDesc(minutosEstimados(tarjetasBase(perfil)))}</p>
+  <div class="ritmo-selector" role="radiogroup" aria-label="${T.ritmo.progresoTitulo}">
+    ${htmlRitmoOpciones(ritmoDe(perfil).id)}
+  </div>
+`;
 
   // Toggle extendidas
   const wrapper = document.getElementById('opcion-ext-wrapper');
@@ -1338,6 +1488,56 @@ function renderMedallasProgreso(perfil) {
 }
 
 // ═══════════════════════════════════════════════════════
+// GUÍA DE BIENVENIDA
+// ═══════════════════════════════════════════════════════
+// Dos pestañas: una para padres y otra para niños. Se muestra al abrir la app
+// hasta que se marque "no volver a mostrar" (preferencia del dispositivo).
+let guiaTab = 'padres';
+
+function renderGuia() {
+  const g = T.bienvenida;
+  document.getElementById('guia-titulo').textContent = g.titulo;
+  document.getElementById('guia-no-mostrar-label').textContent = g.noMostrar;
+  document.getElementById('guia-cerrar').textContent = g.cerrar;
+
+  document.querySelector('.guia-tabs').innerHTML = Object.keys(g.tabs).map(id => `
+    <button type="button" class="guia-tab ${id === guiaTab ? 'activo' : ''}" data-guia="${id}"
+      role="tab" aria-selected="${id === guiaTab}">${g.tabs[id]}</button>
+  `).join('');
+
+  const c = g[guiaTab];
+  document.getElementById('guia-contenido').innerHTML = `
+    <p class="guia-intro">${c.intro}</p>
+    ${c.bloques.map(b => `
+      <div class="guia-bloque">
+        <span class="guia-bloque-icono" aria-hidden="true">${b.icono}</span>
+        <div class="guia-bloque-cuerpo">
+          <span class="guia-bloque-titulo">${b.titulo}</span>
+          <p class="guia-bloque-texto">${b.texto}</p>
+        </div>
+      </div>`).join('')}
+  `;
+}
+
+function abrirGuia() {
+  renderGuia();
+  const check = document.getElementById('guia-no-mostrar');
+  // La casilla refleja la preferencia actual: si ya está desactivada, sale marcada.
+  // Así, reabrir la guía desde Ajustes para leerla no la reactiva al cerrar.
+  if (check) check.checked = !PREFS.bienvenida;
+  document.getElementById('guia-contenido').scrollTop = 0;
+  document.getElementById('bienvenida-overlay').hidden = false;
+}
+
+function cerrarGuia() {
+  const check = document.getElementById('guia-no-mostrar');
+  // Si queda marcada, no volvemos a mostrarla al abrir la app
+  PREFS.bienvenida = !(check && check.checked);
+  guardarPrefs();
+  document.getElementById('bienvenida-overlay').hidden = true;
+}
+
+// ═══════════════════════════════════════════════════════
 // EXPORT / IMPORT
 // ═══════════════════════════════════════════════════════
 function exportarProgreso() {
@@ -1365,17 +1565,23 @@ function importarProgreso(file) {
     try {
       const data = JSON.parse(e.target.result);
       if (!data.nombre || !data.perfil || !data.perfil.items) {
-        alert('El archivo no contiene datos válidos.');
+        alert(T.importar.errorArchivo);
+        return;
+      }
+      // Si ya hay un perfil con ese nombre, preguntamos antes de reemplazarlo
+      if (ESTADO.perfiles[data.nombre] && !confirm(T.importar.sobrescribir(data.nombre))) {
         return;
       }
       ESTADO.perfiles[data.nombre] = data.perfil;
       ESTADO.perfilActivo = data.nombre;
       guardarTodo();
-      renderProgreso();
+      initAudio();
+      renderPerfiles();
       renderInicio();
-      alert(`Progreso de «${data.nombre}» importado correctamente.`);
+      mostrarPantalla('pantalla-inicio');
+      alert(T.importar.ok(data.nombre));
     } catch (err) {
-      alert('Error al leer el archivo: ' + err.message);
+      alert(T.importar.errorLeer(err.message));
     }
   };
   reader.readAsText(file);
@@ -1453,6 +1659,8 @@ function renderAjustes() {
     switchSonido.classList.toggle('activo', PREFS.sonido);
     switchSonido.setAttribute('aria-checked', String(PREFS.sonido));
   }
+  const btnGuia = document.getElementById('btn-ver-guia');
+  if (btnGuia) btnGuia.textContent = T.bienvenida.reabrir;
   document.querySelectorAll('.tema-opcion').forEach(btn => {
     const activo = btn.dataset.tema === PREFS.tema;
     btn.classList.toggle('activo', activo);
@@ -1588,17 +1796,57 @@ document.getElementById('lista-perfiles').addEventListener('click', (e) => {
 });
 
 // ---- Nuevo perfil ----
-document.getElementById('btn-mostrar-nuevo').addEventListener('click', () => {
-  document.getElementById('btn-mostrar-nuevo').hidden = true;
-  document.getElementById('input-nuevo-perfil').hidden = false;
-  document.getElementById('nombre-nuevo-perfil').focus();
+let ritmoNuevo = RITMO_DEFECTO;
+
+// Selector de ritmo: se dibuja desde RITMOS para que nombre, tarjetas y
+// tiempo estimado salgan siempre de la misma fuente.
+// `seleccionado` es el id del ritmo activo ('normal' | 'rapido' | 'intenso').
+function htmlRitmoOpciones(seleccionado) {
+  return RITMOS.map(r => `
+    <button type="button" class="ritmo-opcion ${r.id === seleccionado ? 'activo' : ''}"
+      data-ritmo="${r.id}" role="radio" aria-checked="${r.id === seleccionado}">
+      <span class="ritmo-emoji" aria-hidden="true">${r.emoji}</span>
+      <span class="ritmo-nombre">${T.ritmo.nombres[r.id]}</span>
+      <span class="ritmo-tarjetas">${T.ritmo.tarjetasDia(r.tarjetas)}</span>
+      <span class="ritmo-tiempo">${T.ritmo.tiempo(minutosEstimados(r.tarjetas))}</span>
+    </button>
+  `).join('');
+}
+
+// Selector del formulario "Nuevo perfil"
+function renderRitmoSelector() {
+  document.getElementById('ritmo-titulo').textContent = T.ritmo.titulo;
+  document.getElementById('ritmo-nota').textContent = T.ritmo.nota;
+  document.getElementById('ritmo-selector').innerHTML = htmlRitmoOpciones(ritmoNuevo);
+}
+
+document.getElementById('ritmo-selector').addEventListener('click', (e) => {
+  const btn = e.target.closest('.ritmo-opcion');
+  if (!btn) return;
+  ritmoNuevo = btn.dataset.ritmo;
+  renderRitmoSelector();
 });
 
-document.getElementById('btn-cancelar-nuevo').addEventListener('click', () => {
-  document.getElementById('btn-mostrar-nuevo').hidden = false;
-  document.getElementById('input-nuevo-perfil').hidden = true;
-  document.getElementById('nombre-nuevo-perfil').value = '';
-});
+function mostrarFormNuevoPerfil(mostrar) {
+  document.getElementById('btn-mostrar-nuevo').hidden = mostrar;
+  // Al abrir el formulario ocultamos también "Importar perfil" para que
+  // no parezca parte del formulario nuevo
+  document.getElementById('btn-importar-perfiles').hidden = mostrar;
+  document.getElementById('input-nuevo-perfil').hidden = !mostrar;
+  if (mostrar) {
+    // Cada perfil nuevo empieza en el ritmo por defecto
+    ritmoNuevo = RITMO_DEFECTO;
+    renderRitmoSelector();
+    const input = document.getElementById('nombre-nuevo-perfil');
+    input.value = '';
+    input.placeholder = T.perfiles.placeholder;
+    input.focus();
+  }
+}
+
+document.getElementById('btn-mostrar-nuevo').addEventListener('click', () => mostrarFormNuevoPerfil(true));
+
+document.getElementById('btn-cancelar-nuevo').addEventListener('click', () => mostrarFormNuevoPerfil(false));
 
 function crearNuevoPerfil() {
   const input = document.getElementById('nombre-nuevo-perfil');
@@ -1615,12 +1863,10 @@ function crearNuevoPerfil() {
     setTimeout(() => input.classList.remove('shake'), 400);
     return;
   }
-  ESTADO.perfiles[nombre] = crearPerfil(nombre);
+  ESTADO.perfiles[nombre] = crearPerfil(nombre, ritmoNuevo);
   ESTADO.perfilActivo = nombre;
   guardarTodo();
-  input.value = '';
-  document.getElementById('btn-mostrar-nuevo').hidden = false;
-  document.getElementById('input-nuevo-perfil').hidden = true;
+  mostrarFormNuevoPerfil(false);
   initAudio();
   renderPerfiles();
   renderInicio();
@@ -1630,11 +1876,7 @@ function crearNuevoPerfil() {
 document.getElementById('btn-crear-perfil').addEventListener('click', crearNuevoPerfil);
 document.getElementById('nombre-nuevo-perfil').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') crearNuevoPerfil();
-  if (e.key === 'Escape') {
-    document.getElementById('btn-mostrar-nuevo').hidden = false;
-    document.getElementById('input-nuevo-perfil').hidden = true;
-    document.getElementById('nombre-nuevo-perfil').value = '';
-  }
+  if (e.key === 'Escape') mostrarFormNuevoPerfil(false);
 });
 
 // ---- Inicio: botones ----
@@ -1685,7 +1927,9 @@ document.getElementById('btn-volver-progreso').addEventListener('click', () => {
 
 document.getElementById('btn-exportar').addEventListener('click', exportarProgreso);
 
-document.getElementById('btn-importar-trigger').addEventListener('click', () => {
+// Importar se hace desde la pantalla de perfiles (así se puede importar sin
+// tener que crear antes un perfil y entrar a Mi progreso)
+document.getElementById('btn-importar-perfiles').addEventListener('click', () => {
   document.getElementById('input-importar').click();
 });
 
@@ -1693,6 +1937,28 @@ document.getElementById('input-importar').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (file) importarProgreso(file);
   e.target.value = '';
+});
+
+// Cambiar las tarjetas diarias desde la pantalla de Progreso (delegado)
+document.getElementById('ritmo-wrapper').addEventListener('click', (e) => {
+  const btn = e.target.closest('.ritmo-opcion');
+  if (!btn) return;
+  const perfil = obtenerPerfilActivo();
+  if (!perfil) return;
+  const ritmo = RITMOS.find(r => r.id === btn.dataset.ritmo);
+  if (!ritmo || perfil.ritmo === ritmo.id) return;
+
+  perfil.ritmo = ritmo.id;
+  guardarTodo();
+  renderProgreso();
+
+  // Confirmación breve: el cambio se aplica desde la próxima sesión
+  const aviso = document.getElementById('ritmo-guardado');
+  if (aviso) {
+    aviso.hidden = false;
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(() => { aviso.hidden = true; }, 1800);
+  }
 });
 
 // Toggle extendidas (delegado)
@@ -1736,9 +2002,33 @@ document.querySelectorAll('.tema-opcion').forEach(btn => {
   btn.addEventListener('click', () => cambiarTema(btn.dataset.tema));
 });
 
+// ---- Guía de bienvenida ----
+document.querySelector('.guia-tabs').addEventListener('click', (e) => {
+  const tab = e.target.closest('.guia-tab');
+  if (!tab || tab.dataset.guia === guiaTab) return;
+  guiaTab = tab.dataset.guia;
+  renderGuia();
+  document.getElementById('guia-contenido').scrollTop = 0;
+});
+
+document.getElementById('guia-cerrar').addEventListener('click', cerrarGuia);
+
+document.getElementById('bienvenida-overlay').addEventListener('click', (e) => {
+  // Clic en el fondo: se comporta igual que el botón de cerrar
+  if (e.target === document.getElementById('bienvenida-overlay')) cerrarGuia();
+});
+
+document.getElementById('btn-ver-guia').addEventListener('click', () => {
+  cerrarPaneles();
+  abrirGuia();
+});
+
 // Cerrar los paneles con Escape
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') cerrarPaneles();
+  if (e.key === 'Escape') {
+    if (!document.getElementById('bienvenida-overlay').hidden) cerrarGuia();
+    else cerrarPaneles();
+  }
 });
 
 // ---- Modal: delegación ----
@@ -1771,7 +2061,7 @@ if (CONFIG.modoPrueba) {
     const perfil = obtenerPerfilActivo();
     if (!perfil) return;
     const nombre = ESTADO.perfilActivo;
-    ESTADO.perfiles[nombre] = crearPerfil(nombre);
+    ESTADO.perfiles[nombre] = crearPerfil(nombre, perfil.ritmo);
     guardarTodo();
     if (pantallaActual === 'pantalla-inicio') renderInicio();
     if (pantallaActual === 'pantalla-progreso') renderProgreso();
@@ -1817,7 +2107,11 @@ function init() {
   }
 
   renderAjustes();
+  renderRitmoSelector();
   initDebug();
+
+  // Guía de bienvenida: solo si no se pidió no volver a mostrarla
+  if (PREFS.bienvenida) abrirGuia();
 }
 
 init();

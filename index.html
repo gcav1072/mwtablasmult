@@ -42,11 +42,23 @@
             <span class="icono-mas">+</span>
             <span>Nuevo perfil</span>
           </button>
-          <div id="input-nuevo-perfil" class="input-nuevo" hidden>
-            <input type="text" id="nombre-nuevo-perfil" placeholder="Escribe tu nombre..." maxlength="20"
-              autocomplete="off" aria-label="Nombre del nuevo perfil">
-            <button id="btn-crear-perfil" class="btn-confirmar" aria-label="Crear perfil">✓</button>
-            <button id="btn-cancelar-nuevo" class="btn-cancelar" aria-label="Cancelar">✗</button>
+          <button id="btn-importar-perfiles" class="btn-importar-perfil" aria-label="Importar un perfil desde un archivo">
+            <span>📤 Importar perfil</span>
+          </button>
+          <input type="file" id="input-importar" accept=".json" hidden
+            aria-label="Seleccionar archivo de perfil para importar">
+          <div id="input-nuevo-perfil" class="nuevo-perfil-form" hidden>
+            <div class="input-nuevo">
+              <input type="text" id="nombre-nuevo-perfil" placeholder="Escribe tu nombre..." maxlength="20"
+                autocomplete="off" aria-label="Nombre del nuevo perfil">
+              <button id="btn-crear-perfil" class="btn-confirmar" aria-label="Crear perfil">✓</button>
+              <button id="btn-cancelar-nuevo" class="btn-cancelar" aria-label="Cancelar">✗</button>
+            </div>
+            <div class="ritmo-bloque">
+              <p id="ritmo-titulo" class="ritmo-titulo"></p>
+              <div id="ritmo-selector" class="ritmo-selector" role="radiogroup" aria-label="Ritmo de estudio"></div>
+              <p id="ritmo-nota" class="ritmo-nota"></p>
+            </div>
           </div>
         </div>
       </div>
@@ -147,11 +159,10 @@
         <div id="mapa-calor" class="mapa-calor"></div>
         <div id="leyenda-mapa" class="leyenda"></div>
         <div id="medallas-todas" class="medallas-showcase"></div>
+        <div id="ritmo-wrapper" class="opcion-ritmo glass"></div>
         <div id="opcion-ext-wrapper" class="opcion-extendidas glass"></div>
         <div class="botones-progreso">
           <button id="btn-exportar" class="btn-secundario" aria-label="Exportar progreso">📥 Exportar</button>
-          <button id="btn-importar-trigger" class="btn-secundario" aria-label="Importar progreso">📤 Importar</button>
-          <input type="file" id="input-importar" accept=".json" hidden aria-label="Seleccionar archivo de progreso">
         </div>
         <button id="btn-volver-progreso" class="btn-secundario" aria-label="Volver al inicio">← Volver</button>
       </div>
@@ -183,6 +194,7 @@
           <button class="tema-opcion" data-tema="system" role="radio" aria-checked="true">Sistema</button>
         </div>
       </div>
+      <button id="btn-ver-guia" class="btn-guia" aria-label="Ver la guía de uso"></button>
     </div>
   </div>
 
@@ -203,6 +215,22 @@
   </div>
 
   <div id="panel-overlay" class="panel-overlay" hidden></div>
+
+  <!-- ═══════════════ GUÍA DE BIENVENIDA ═══════════════ -->
+  <div id="bienvenida-overlay" class="modal-overlay" hidden>
+    <div class="modal modal-guia" role="dialog" aria-modal="true" aria-labelledby="guia-titulo">
+      <h3 id="guia-titulo"></h3>
+      <div class="guia-tabs" role="tablist" aria-label="Guía de uso"></div>
+      <div id="guia-contenido" class="guia-contenido" role="tabpanel" tabindex="0"></div>
+      <label class="guia-check">
+        <input type="checkbox" id="guia-no-mostrar">
+        <span id="guia-no-mostrar-label"></span>
+      </label>
+      <div class="modal-botones">
+        <button class="btn-principal" id="guia-cerrar"></button>
+      </div>
+    </div>
+  </div>
 
   <!-- ═══════════════ MODAL ═══════════════ -->
   <div id="modal-overlay" class="modal-overlay" hidden>

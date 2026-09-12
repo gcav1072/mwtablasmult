@@ -1,6 +1,6 @@
 # 🧮 Tablas de Multiplicar — Repetición Espaciada
 
-Una aplicación web educativa e interactiva diseñada para que niños de 9 a 11 años dominen las tablas de multiplicar de forma sólida y divertida mediante **repetición espaciada** (*Spaced Repetition System* - SRS).
+Una aplicación web educativa e interactiva diseñada para que niños de 9 a 12 años dominen las tablas de multiplicar de forma sólida y divertida mediante **repetición espaciada** (*Spaced Repetition System* - SRS).
 
 Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias ni herramientas de compilación externas. Compatible para ser alojada como sitio estático en **GitHub Pages**.
 
@@ -9,20 +9,26 @@ Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias n
 ## ✨ Características Principales
 
 - **🧠 Algoritmo de Repetición Espaciada (SRS):**
-  - Sistema de 5 escalones de dominio: 1 día, 3 días, 7 días, 14 días y 30 días.
-  - Sesiones diarias optimizadas de 15 operaciones (máximo 5 fichas nuevas por sesión, el resto de repaso).
+  - **7 niveles de dominio** con intervalos crecientes: 1, 3, 7, 14, 30, 60 y 90 días. Al superar el último, la ficha se **gradúa** y pasa a repasos de mantenimiento.
+  - **La velocidad de respuesta cuenta**: acertar en menos de 1,5 s sube **dos** escalones (memoria); entre 1,5 s y 4,5 s sube **uno** (automatizado); por encima de 4,5 s se acepta como correcto pero no avanza, porque aún lo está calculando. Un fallo baja hasta 2 escalones.
+  - **Corrección obligatoria al fallar**: no hay auto-avance. Aparece el resultado correcto en grande y el niño debe **teclearlo** para continuar, lo que convierte el error en un repaso activo.
+  - Sesiones diarias según el **ritmo del perfil**: Normal (15 tarjetas/día), Rápido (20) o Intenso (30). Si hay más fichas vencidas de las previstas, la sesión incluye **todas** las vencidas, de modo que el contador *"Para hoy"* de Inicio coincide siempre con el número de tarjetas de la sesión.
+  - **Ritmo de estudio configurable**: al crear un perfil se eligen 3 ritmos con su tiempo estimado de sesión (Normal ≈ 5 min · Rápido ≈ 6 min · Intenso ≈ 9 min). También se pueden **cambiar las tarjetas diarias** después, desde la tarjeta *"⚡ Tarjetas diarias"* de la pantalla **Mi Progreso**.
   - Cooldown de 20 horas entre sesiones completadas para fomentar el hábito diario sin sobrecargar.
-  - Sistema de **repesca**: las fichas falladas en una sesión se vuelven a preguntar al final de la misma antes de consolidar el resultado.
+  - Sistema de **repesca ilimitada**: las fichas falladas vuelven a preguntarse al final de la sesión, tantas veces como haga falta hasta acertarlas. Los fallos dentro de la repesca no penalizan las estadísticas.
+  - **Rondas extra opcionales**: al terminar, se puede practicar en bloques de **+5 tarjetas** tantas veces como se quiera (se suman a la sesión del día).
 
 - **📊 Visualización del Progreso & Gamificación:**
-  - **Matriz / Heatmap interactivo**: visualización de todas las multiplicaciones (tablas del 1 al 10, o hasta el 12) con código de colores según el nivel de dominio.
-  - **Sistema de medallas**: 8 logros desbloqueables por hitos (primeros pasos, rachas, velocidad, dominio de tablas).
+  - **Matriz / Heatmap interactivo**: visualización de todas las multiplicaciones (tablas del 1 al 10, o hasta el 12) con código de colores según el nivel de dominio. Cada uno de los 7 niveles y el estado *graduada* usa una tonalidad claramente distinta (rojo → naranja → amarillo → lima → esmeralda → cian → azul → fucsia para las graduadas) y los **mismos colores** valen para tema claro y oscuro.
+  - **Sistema de medallas**: 9 logros desbloqueables por hitos (primeros pasos, rachas, velocidad, dominio de tablas, graduación).
   - **Estadísticas detalladas**: racha actual y máxima, total de aciertos/fallos, tiempo medio de respuesta.
   - **Desbloqueo progresivo**: opción de activar las tablas del 11 y 12 automáticamente al alcanzar el 80% de dominio de las tablas básicas (o manualmente desde ajustes).
 
 - **👥 Multi-Perfil con Persistencia Local:**
   - Permite múltiples usuarios en el mismo dispositivo.
   - Todos los progresos se guardan en `localStorage`.
+  - **Importar un perfil** directamente desde la pantalla de selección de perfiles (📤 *Importar perfil*), sin necesidad de crear un usuario antes. Si el nombre ya existe, se pide confirmación antes de reemplazarlo.
+  - **Exportar** el progreso del perfil activo desde **Mi Progreso** (📥 *Exportar*).
   - Seguridad en borrado: confirmación en dos pasos (aviso + confirmación escribiendo el nombre).
 
 - **🎨 Diseño Moderno & Adaptable:**
@@ -33,9 +39,14 @@ Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias n
   - Efectos de sonido sintetizados mediante **Web Audio API** (sin necesidad de cargar archivos de audio externos), con opción de silenciarlos.
   - Modo seguro y accesible con soporte para navegación por teclado y contraste adecuado.
 
+- **📖 Guía de bienvenida en 2 pestañas:**
+  - Al abrir o refrescar la app aparece un cuadro de documentación con dos pestañas: **Para padres** (cómo funciona la repetición espaciada, la importancia de la velocidad, el hábito diario y el respaldo de datos) y **Para niños** (qué van a hacer, cómo responder, qué pasa si fallan y las medallas).
+  - Casilla **"No volver a mostrar esto al abrir la app"** para no resultar pesada.
+  - Siempre se puede volver a consultar desde **Ajustes ⚙️ → ℹ️ ¿Cómo funciona?**.
+
 - **⚙️ Ajustes del dispositivo:**
   - Se abren desde el botón flotante ⚙️ de la esquina superior derecha, que despliega una **barra lateral**.
-  - **Sonido** activado/desactivado y **tema** (Claro · Oscuro · Sistema).
+  - **Sonido** activado/desactivado, **tema** (Claro · Oscuro · Sistema) y acceso a la **guía de uso** (ℹ️ *¿Cómo funciona?*).
   - Se guardan en `localStorage` bajo la clave `tablas_prefs_v1`, **independientes de los perfiles** (son preferencias del dispositivo).
 
 ---
