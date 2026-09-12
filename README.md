@@ -32,7 +32,8 @@ Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias n
   - Seguridad en borrado: confirmación en dos pasos (aviso + confirmación escribiendo el nombre).
 
 - **🎨 Diseño Moderno & Adaptable:**
-  - Interfaz con acentos violeta/azul y efectos de cristal (*glassmorphism*).
+  - Interfaz con los **acentos de marca Mathwizards** (rojo `#E2232D` → magenta `#C922E3` → rosa `#E3229F`) y efectos de cristal (*glassmorphism*).
+  - **Marca de agua discreta** del logo detrás del contenido en todas las pantallas (blanca en tema oscuro, negra en claro).
   - **Tema claro, oscuro o automático según el sistema** (por defecto: sistema).
   - Tipografía: **Poppins** en los títulos y **Cabin** en el texto.
   - Teclado numérico virtual táctil para móviles y tablets + soporte nativo de teclado físico (números, Numpad, Enter, Backspace).
@@ -48,6 +49,35 @@ Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias n
   - Se abren desde el botón flotante ⚙️ de la esquina superior derecha, que despliega una **barra lateral**.
   - **Sonido** activado/desactivado, **tema** (Claro · Oscuro · Sistema) y acceso a la **guía de uso** (ℹ️ *¿Cómo funciona?*).
   - Se guardan en `localStorage` bajo la clave `tablas_prefs_v1`, **independientes de los perfiles** (son preferencias del dispositivo).
+  - Incluyen el bloque **«Acerca de»** con la identidad de la marca (logo, autoría, ubicación, Instagram y paleta).
+
+---
+
+## 🎓 Identidad de marca
+
+Aplicación desarrollada para **Mathwizards Consultoría Educativa STEM**.
+
+| | |
+|---|---|
+| **Marca** | Mathwizards Consultoría Educativa STEM |
+| **Instagram** | [@mathwizards.ve](https://www.instagram.com/mathwizards.ve) |
+| **Autor** | Ing. Gabriel Astudillo |
+| **Ubicación** | Maturín, Venezuela & Modalidad Online |
+| **Enfoque** | Constructivista STEM: aprendizaje activo y práctico, rigor analítico y comprensión profunda de las bases conceptuales, sin perder dinamismo. |
+
+**Paleta de colores**
+
+| Color | Hex |
+|---|---|
+| Rojo Mathwizards (principal) | `#E2232D` |
+| Rosa | `#E3229F` |
+| Naranja rojizo | `#E34122` |
+| Magenta | `#C922E3` |
+| Naranja | `#E36322` |
+| Negro | `#000000` |
+| Blanco | `#FFFFFF` |
+
+La identidad se integra sin alterar la estructura ni la lógica de la app: acento y gradiente de marca en la UI, **marca de agua** sutil del logo, **créditos** discretos al pie de las pantallas de Perfiles e Inicio y la ficha completa en **Ajustes → Acerca de**. Los tokens `--brand-*` viven en `:root` (`css/style.css`) y los datos de la ficha en `T.identidad` (`js/app.js`).
 
 ---
 
@@ -60,6 +90,8 @@ mwtablasmult/
 │   └── style.css       # Sistema de diseño, temas, layout responsivo y animaciones
 ├── js/
 │   └── app.js          # Lógica SRS, estado, audio, renderizado y eventos
+├── assets/
+│   └── img/            # Logos de Mathwizards (PNG + SVG blanco/negro)
 ├── README.md           # Documentación del proyecto
 └── .gitignore          # Archivos ignorados por git
 ```

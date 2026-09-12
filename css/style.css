@@ -23,9 +23,21 @@
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  --accent: #8b5cf6;
-  --accent-blue: #3b82f6;
-  --accent-gradient: linear-gradient(135deg, #8b5cf6, #6366f1, #3b82f6);
+  /* ── Paleta de marca Mathwizards ──
+     El acento de la app es el rojo de marca (#E2232D); el resto de colores
+     de la paleta quedan como tokens para la identidad y el bloque «Acerca de». */
+  --brand-principal: #E2232D;
+  --brand-rosa: #E3229F;
+  --brand-naranja: #E34122;
+  --brand-magenta: #C922E3;
+  --brand-naranja-claro: #E36322;
+  --brand-negro: #000000;
+  --brand-blanco: #FFFFFF;
+  /* Componentes RGB del acento → permite alphas con rgba(var(--accent-rgb), x) */
+  --accent-rgb: 226, 35, 45;
+  --accent: var(--brand-principal);
+  --accent-2: var(--brand-magenta);
+  --accent-gradient: linear-gradient(135deg, #E2232D, #C922E3, #E3229F);
   --success: #22c55e;
   --success-soft: rgba(34, 197, 94, 0.13);
   --warning: #f59e0b;
@@ -53,8 +65,11 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
-  --shadow-glow: 0 0 24px rgba(139, 92, 246, 0.25);
+  --shadow-glow: 0 0 24px rgba(var(--accent-rgb), 0.28);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* Marca de agua del logo (vectorial): blanca sobre fondo oscuro */
+  --logo-agua: url('../assets/img/l_white.svg');
+  --logo-agua-opacidad: 0.09;
   --font: 'Cabin', system-ui, -apple-system, sans-serif;
   --font-titulo: 'Poppins', system-ui, -apple-system, sans-serif;
   --transition: 0.25s cubic-bezier(.4, 0, .2, 1);
@@ -62,8 +77,8 @@
 
 /* ═══════════════════════════════════════════════════════
    TEMA CLARO
-   Solo se ajusta lo necesario: la paleta de acentos del
-   proyecto se mantiene intacta.
+   Solo se ajusta lo necesario: la paleta de marca (acento
+   rojo y gradiente) se mantiene idéntica en ambos temas.
    ═══════════════════════════════════════════════════════ */
 :root[data-theme="light"] {
   --bg-primary: #f2f3fa;
@@ -80,12 +95,15 @@
   --panel-border: rgba(15, 23, 42, 0.12);
   --heat-0: #e2e8f0;
   --shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.16);
+  /* Marca de agua del logo: negra sobre fondo claro */
+  --logo-agua: url('../assets/img/l_black.svg');
+  --logo-agua-opacidad: 0.07;
 }
 
 :root[data-theme="light"] body::before {
   background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(139, 92, 246, 0.16) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(59, 130, 246, 0.14) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(var(--accent-rgb), 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(201, 34, 227, 0.1) 0%, transparent 60%);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -110,8 +128,8 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(139, 92, 246, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(var(--accent-rgb), 0.14) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(201, 34, 227, 0.12) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
   animation: bgPulse 12s ease-in-out infinite alternate;
@@ -130,6 +148,17 @@ body::before {
 #app {
   position: relative;
   z-index: 1;
+}
+
+/* Marca de agua del logo Mathwizards: discreta, centrada y por detrás del
+   contenido. El vector cambia según el tema (blanco en oscuro, negro en claro). */
+.marca-agua {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--logo-agua) center / min(58vmin, 420px) no-repeat;
+  opacity: var(--logo-agua-opacidad);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -218,7 +247,7 @@ h2 {
   font-size: clamp(1rem, 3vw, 1.25rem);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 24px rgba(var(--accent-rgb), 0.35);
   transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
   animation: gradBtn 4s ease infinite;
   min-height: 48px;
@@ -226,7 +255,7 @@ h2 {
 
 .btn-principal:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 8px 32px rgba(var(--accent-rgb), 0.45);
 }
 
 .btn-principal:active:not(:disabled) {
@@ -403,9 +432,9 @@ h2 {
 .btn-nuevo-perfil {
   width: 100%;
   padding: 14px;
-  border: 2px dashed rgba(139, 92, 246, 0.3);
+  border: 2px dashed rgba(var(--accent-rgb), 0.35);
   border-radius: var(--radius-lg);
-  background: rgba(139, 92, 246, 0.06);
+  background: rgba(var(--accent-rgb), 0.06);
   color: var(--accent);
   font-family: var(--font);
   font-size: 1rem;
@@ -420,8 +449,8 @@ h2 {
 }
 
 .btn-nuevo-perfil:hover {
-  background: rgba(139, 92, 246, 0.12);
-  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.5);
 }
 
 .icono-mas {
@@ -534,7 +563,7 @@ h2 {
 
 .ritmo-opcion.activo {
   border-color: var(--accent);
-  background: rgba(139, 92, 246, 0.14);
+  background: rgba(var(--accent-rgb), 0.14);
   color: var(--text-primary);
   box-shadow: var(--shadow-glow);
 }
@@ -833,7 +862,7 @@ h2 {
   font-size: clamp(0.95rem, 3.2vw, 1.15rem);
   font-weight: 800;
   text-align: center;
-  color: #fcd34d;
+  color: #fde68a;
   text-wrap: balance;
   animation: popIn 0.4s ease-out 0.12s backwards;
 }
@@ -845,7 +874,7 @@ h2 {
   font-weight: 700;
   line-height: 1.35;
   text-align: center;
-  color: #c4b5fd;
+  color: #fbcfe8;
   text-wrap: balance;
   animation: popIn 0.4s ease-out 0.16s backwards;
 }
@@ -856,8 +885,8 @@ h2 {
   font-weight: 800;
   text-align: center;
   color: #fff;
-  background: rgba(139, 92, 246, 0.22);
-  border: 1px dashed rgba(139, 92, 246, 0.55);
+  background: rgba(var(--accent-rgb), 0.22);
+  border: 1px dashed rgba(var(--accent-rgb), 0.55);
   border-radius: 999px;
   padding: 7px 18px;
   animation: popIn 0.4s ease-out 0.2s backwards;
@@ -867,11 +896,11 @@ h2 {
 
   0%,
   100% {
-    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.16), 0 10px 26px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.16), 0 10px 26px rgba(var(--accent-rgb), 0.4);
   }
 
   50% {
-    box-shadow: 0 0 0 14px rgba(245, 158, 11, 0.04), 0 14px 38px rgba(139, 92, 246, 0.65);
+    box-shadow: 0 0 0 14px rgba(245, 158, 11, 0.04), 0 14px 38px rgba(var(--accent-rgb), 0.65);
   }
 }
 
@@ -1389,8 +1418,8 @@ h2 {
 .aviso-desbloqueo {
   width: 100%;
   padding: 16px 20px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15));
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.15), rgba(201, 34, 227, 0.15));
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
   border-radius: var(--radius-lg);
   text-align: center;
   animation: popIn 0.4s ease-out;
@@ -2006,11 +2035,11 @@ h2 {
 }
 
 :root[data-theme="light"] .fb-animo {
-  color: #6d28d9;
+  color: #a21caf;
 }
 
 :root[data-theme="light"] .fb-copiar {
-  color: #5b21b6;
+  color: #991b1b;
 }
 
 :root[data-theme="light"] .fb-pista {
@@ -2033,6 +2062,99 @@ h2 {
 }
 
 /* ═══════════════════════════════════════════════════════
+   IDENTIDAD DE MARCA
+   Créditos discretos (Perfiles/Inicio) y ficha «Acerca de» (Ajustes).
+   ═══════════════════════════════════════════════════════ */
+.creditos {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-muted);
+  text-wrap: balance;
+  opacity: 0.85;
+}
+
+.acerca-de {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border-card);
+}
+
+.acerca-logo {
+  align-self: center;
+  width: 64px;
+  height: 64px;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  background: var(--brand-negro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.acerca-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.acerca-marca {
+  font-family: var(--font-titulo);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.acerca-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.acerca-meta a {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.acerca-meta a:hover {
+  text-decoration: underline;
+}
+
+.acerca-enfoque {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.acerca-paleta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding-top: 2px;
+}
+
+/* Muestras de la paleta de marca (borde para que se vean negro y blanco) */
+.acerca-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border-card-hover);
+}
+
+/* ═══════════════════════════════════════════════════════
    RESPONSIVE TWEAKS
    ═══════════════════════════════════════════════════════ */
 /* Pantallas con poca altura (móviles pequeños y apaisados):
@@ -2044,6 +2166,12 @@ h2 {
 
   .contenedor {
     gap: clamp(12px, 2.4vh, 18px);
+  }
+
+  /* El crédito se compacta para no reintroducir scroll en móviles bajos */
+  .creditos {
+    font-size: 0.66rem;
+    line-height: 1.3;
   }
 
   .zona-pregunta {

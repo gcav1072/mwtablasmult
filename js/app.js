@@ -184,6 +184,25 @@ const T = {
     ],
   },
   leyenda: ['No practicada', 'Empezando', 'Aprendiendo', 'Progresando', 'Bien', 'Dominada', 'Consolidada', 'Casi graduada', '¡Graduada! 🎓'],
+  // Ficha de identidad de la marca (se pinta en Ajustes → «Acerca de»)
+  identidad: {
+    marca: 'Mathwizards Consultoría Educativa STEM',
+    autor: 'Ing. Gabriel Astudillo',
+    usuario: '@mathwizards.ve',
+    url: 'https://www.instagram.com/mathwizards.ve',
+    ubicacion: 'Maturín, Venezuela & Modalidad Online',
+    enfoque: 'Enfoque constructivista STEM: aprendizaje activo y práctico, rigor analítico y comprensión profunda de las bases conceptuales, sin perder dinamismo.',
+    logo: 'assets/img/l_white.png',
+    paleta: [
+      { nombre: 'Rojo Mathwizards', hex: '#E2232D' },
+      { nombre: 'Rosa', hex: '#E3229F' },
+      { nombre: 'Naranja rojizo', hex: '#E34122' },
+      { nombre: 'Magenta', hex: '#C922E3' },
+      { nombre: 'Naranja', hex: '#E36322' },
+      { nombre: 'Negro', hex: '#000000' },
+      { nombre: 'Blanco', hex: '#FFFFFF' },
+    ],
+  },
 };
 
 // ═══════════════════════════════════════════════════════
@@ -1666,6 +1685,30 @@ function renderAjustes() {
     btn.classList.toggle('activo', activo);
     btn.setAttribute('aria-checked', String(activo));
   });
+
+  // Ficha de identidad de marca (logo, autoría, ubicación y paleta)
+  const acerca = document.getElementById('acerca-de');
+  if (acerca) acerca.innerHTML = htmlAcercaDe();
+}
+
+// Contenido del bloque «Acerca de» del panel de ajustes
+function htmlAcercaDe() {
+  const id = T.identidad;
+  return `
+  <div class="acerca-logo">
+    <img src="${id.logo}" alt="Logo de ${esc(id.marca)}" loading="lazy">
+  </div>
+  <div class="acerca-marca">${esc(id.marca)}</div>
+  <div class="acerca-meta">
+    <span>✏️ ${esc(id.autor)}</span>
+    <span>📍 ${esc(id.ubicacion)}</span>
+    <a href="${id.url}" target="_blank" rel="noopener">📷 ${esc(id.usuario)}</a>
+  </div>
+  <p class="acerca-enfoque">${esc(id.enfoque)}</p>
+  <div class="acerca-paleta" role="list" aria-label="Paleta de marca">
+    ${id.paleta.map(c => `<span class="acerca-swatch" role="listitem" style="background:${c.hex}" title="${esc(c.nombre)} ${c.hex}"></span>`).join('')}
+  </div>
+`;
 }
 
 function botonDePanel(id) {
