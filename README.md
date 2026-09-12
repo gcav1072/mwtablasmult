@@ -26,10 +26,17 @@ Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias n
   - Seguridad en borrado: confirmación en dos pasos (aviso + confirmación escribiendo el nombre).
 
 - **🎨 Diseño Moderno & Adaptable:**
-  - Interfaz oscura premium (*dark mode* con acentos violeta/azul y efectos de cristal/glassmorphism).
+  - Interfaz con acentos violeta/azul y efectos de cristal (*glassmorphism*).
+  - **Tema claro, oscuro o automático según el sistema** (por defecto: sistema).
+  - Tipografía: **Poppins** en los títulos y **Cabin** en el texto.
   - Teclado numérico virtual táctil para móviles y tablets + soporte nativo de teclado físico (números, Numpad, Enter, Backspace).
-  - Efectos de sonido sintetizados mediante **Web Audio API** (sin necesidad de cargar archivos de audio externos).
+  - Efectos de sonido sintetizados mediante **Web Audio API** (sin necesidad de cargar archivos de audio externos), con opción de silenciarlos.
   - Modo seguro y accesible con soporte para navegación por teclado y contraste adecuado.
+
+- **⚙️ Ajustes del dispositivo:**
+  - Se abren desde el botón flotante ⚙️ de la esquina superior derecha, que despliega una **barra lateral**.
+  - **Sonido** activado/desactivado y **tema** (Claro · Oscuro · Sistema).
+  - Se guardan en `localStorage` bajo la clave `tablas_prefs_v1`, **independientes de los perfiles** (son preferencias del dispositivo).
 
 ---
 
@@ -65,11 +72,15 @@ Haz doble clic en `index.html` o ábrelo en tu navegador favorito.
 
 ## 🛠️ Modo Debug
 
-Para pruebas rápidas y desarrollo, la app cuenta con un panel de herramientas de desarrollo:
+Para pruebas rápidas y desarrollo, la app cuenta con un panel de herramientas:
 - Añade `?debug=1` en la URL del navegador (ej: `http://localhost:8080/?debug=1`).
 - En modo debug:
   - Las sesiones tienen un cooldown acelerado de 10 segundos.
-  - Aparece un panel flotante para avanzar días (`+1 día`), resetear el perfil activo o volcar el estado a la consola de desarrollo (`console.table`).
+  - Aparece una **pestaña lateral** (🛠️) que despliega un **panel de debug** desde la derecha:
+    - En escritorio el panel arranca **abierto** (sin oscurecer la pantalla, para poder usar la app).
+    - En móvil queda **plegado** tras la pestaña para no tapar botones.
+  - Dentro del panel: avanzar días (`+1 día`), resetear el perfil activo o volcar el estado a la consola (`console.table`).
+- El panel de ajustes y el de debug son mutuamente excluyentes y se cierran con `Esc`, con la ✕ o pulsando fuera.
 
 ---
 

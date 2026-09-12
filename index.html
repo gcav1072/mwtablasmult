@@ -9,7 +9,22 @@
     content="Practica las tablas de multiplicar con repetición espaciada. App educativa para niños de 9-11 años.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <script>
+    // Aplica el tema guardado antes de pintar para evitar el parpadeo (FOUC)
+    (function () {
+      try {
+        var prefs = JSON.parse(localStorage.getItem('tablas_prefs_v1') || '{}');
+        var pref = prefs.tema || 'system';
+        var claro = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        var tema = pref === 'system' ? (claro ? 'light' : 'dark') : pref;
+        document.documentElement.dataset.theme = tema;
+        document.documentElement.style.colorScheme = tema;
+      } catch (e) { /* sin preferencias guardadas */ }
+    })();
+  </script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -144,20 +159,56 @@
 
   </main>
 
+  <!-- ═══════════════ AJUSTES (barra lateral) ═══════════════ -->
+  <button id="btn-ajustes" class="btn-flotante btn-ajustes" aria-label="Abrir ajustes" aria-expanded="false"
+    aria-controls="panel-ajustes">⚙️</button>
+
+  <div id="panel-ajustes" class="panel-lateral panel-ajustes" aria-hidden="true" role="dialog"
+    aria-label="Ajustes">
+    <div class="panel-cabecera">
+      <h4>⚙️ Ajustes</h4>
+      <button class="panel-cerrar" data-cerrar="panel-ajustes" aria-label="Cerrar ajustes">✕</button>
+    </div>
+    <div class="panel-cuerpo">
+      <div class="ajuste-fila">
+        <span class="ajuste-label">🔊 Sonido</span>
+        <button id="toggle-sonido" class="toggle-switch" role="switch" aria-checked="true"
+          aria-label="Activar o desactivar el sonido"></button>
+      </div>
+      <div class="ajuste-fila ajuste-columna">
+        <span class="ajuste-label">🎨 Tema</span>
+        <div class="selector-tema" role="radiogroup" aria-label="Tema de la interfaz">
+          <button class="tema-opcion" data-tema="light" role="radio" aria-checked="false">Claro</button>
+          <button class="tema-opcion" data-tema="dark" role="radio" aria-checked="false">Oscuro</button>
+          <button class="tema-opcion" data-tema="system" role="radio" aria-checked="true">Sistema</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ DEBUG (solo con ?debug=1) ═══════════════ -->
+  <button id="debug-tab" class="btn-flotante debug-tab" hidden aria-label="Abrir panel de debug"
+    aria-expanded="false" aria-controls="debug-panel">🛠️</button>
+  <div id="debug-panel" class="panel-lateral debug-panel" aria-hidden="true" role="dialog" aria-label="Debug">
+    <div class="panel-cabecera">
+      <h4>🛠️ Debug</h4>
+      <button class="panel-cerrar" data-cerrar="debug-panel" aria-label="Cerrar debug">✕</button>
+    </div>
+    <div class="panel-cuerpo">
+      <p id="debug-tiempo"></p>
+      <button id="debug-avanzar" class="btn-debug">⏩ +1 día</button>
+      <button id="debug-reset" class="btn-debug">🗑️ Reset perfil</button>
+      <button id="debug-consola" class="btn-debug">📋 Estado → consola</button>
+    </div>
+  </div>
+
+  <div id="panel-overlay" class="panel-overlay" hidden></div>
+
   <!-- ═══════════════ MODAL ═══════════════ -->
   <div id="modal-overlay" class="modal-overlay" hidden>
     <div class="modal" role="dialog" aria-modal="true">
       <div id="modal-contenido"></div>
     </div>
-  </div>
-
-  <!-- ═══════════════ DEBUG PANEL ═══════════════ -->
-  <div id="debug-panel" class="debug-panel" hidden>
-    <h4>🛠️ Debug</h4>
-    <p id="debug-tiempo"></p>
-    <button id="debug-avanzar" class="btn-debug">⏩ +1 día</button>
-    <button id="debug-reset" class="btn-debug">🗑️ Reset perfil</button>
-    <button id="debug-consola" class="btn-debug">📋 Estado → consola</button>
   </div>
 
   <script src="js/app.js"></script>

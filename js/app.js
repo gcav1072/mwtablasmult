@@ -142,6 +142,8 @@ const COLORES_ESCALON = [
   '#3b82f6', // nivel 7 · 90 días
 ];
 const COLOR_GRADUADA = '#f59e0b'; // 🎓 dorado: dominio a largo plazo confirmado
+// Celda "no practicada": usa un token CSS para adaptarse al tema claro/oscuro
+const HEAT_0 = 'var(--heat-0)';
 
 // ═══════════════════════════════════════════════════════
 // MEDALLAS
@@ -314,6 +316,66 @@ function orientar(item, perfil) {
 }
 
 // ═══════════════════════════════════════════════════════
+// PREFERENCIAS DEL DISPOSITIVO (sonido y tema)
+// ═══════════════════════════════════════════════════════
+// No van por perfil: son ajustes del navegador/dispositivo.
+const CLAVE_PREFS = 'tablas_prefs_v1';
+const PREFS_DEFECTO = { version: 1, sonido: true, tema: 'system' };
+let PREFS = { ...PREFS_DEFECTO };
+
+const mqTemaClaro = window.matchMedia
+  ? window.matchMedia('(prefers-color-scheme: light)')
+  : null;
+
+function cargarPrefs() {
+  try {
+    const raw = localStorage.getItem(CLAVE_PREFS);
+    if (raw) {
+      const datos = JSON.parse(raw);
+      if (datos && datos.version === 1) {
+        PREFS = { ...PREFS_DEFECTO, ...datos };
+        return;
+      }
+    }
+  } catch (e) { console.warn('Preferencias corruptas, usando valores por defecto', e); }
+  PREFS = { ...PREFS_DEFECTO };
+}
+
+function guardarPrefs() {
+  try {
+    localStorage.setItem(CLAVE_PREFS, JSON.stringify(PREFS));
+  } catch (e) {
+    console.error('Error al guardar preferencias:', e);
+  }
+}
+
+// 'light' | 'dark' a partir de la preferencia guardada
+function resolverTema(pref) {
+  if (pref === 'light' || pref === 'dark') return pref;
+  return mqTemaClaro && mqTemaClaro.matches ? 'light' : 'dark';
+}
+
+function aplicarTema() {
+  const tema = resolverTema(PREFS.tema);
+  document.documentElement.dataset.theme = tema;
+  document.documentElement.style.colorScheme = tema;
+}
+
+function cambiarTema(pref) {
+  PREFS.tema = pref;
+  guardarPrefs();
+  aplicarTema();
+  renderAjustes();
+}
+
+// Si el sistema cambia de tema y el ajuste es "Sistema", seguimos el cambio
+if (mqTemaClaro) {
+  mqTemaClaro.addEventListener('change', () => {
+    if (PREFS.tema === 'system') aplicarTema();
+  });
+}
+
+// ═══════════════════════════════════════════════════════
 // AUDIO (Web Audio API — un solo AudioContext)
 // ═══════════════════════════════════════════════════════
 function initAudio() {
@@ -324,7 +386,7 @@ function initAudio() {
 }
 
 function pitido(frecuencia, duracion = 0.12) {
-  if (!audioCtx) return;
+  if (!PREFS.sonido || !audioCtx) return;
   try {
     const osc = audioCtx.createOscillator();
     const gan = audioCtx.createGain();
@@ -1199,7 +1261,7 @@ function renderProgreso() {
   renderMapaCalor(perfil, tabs);
 
   // Leyenda (8 niveles + estado graduada)
-  const coloresLeyenda = [...COLORES_ESCALON, COLOR_GRADUADA];
+  const coloresLeyenda = [HEAT_0, ...COLORES_ESCALON.slice(1), COLOR_GRADUADA];
   document.getElementById('leyenda-mapa').innerHTML = coloresLeyenda.map((color, i) => `
   <div class="leyenda-item">
     <div class="leyenda-color" style="background:${color}"></div>
@@ -1240,13 +1302,13 @@ function renderMapaCalor(perfil, tabs) {
       const item = perfil.items[key];
       let color, titulo;
       if (!item) {
-        color = COLORES_ESCALON[0];
+        color = HEAT_0;
         titulo = `${t}×${f} — No disponible`;
       } else if (item.graduada) {
         color = COLOR_GRADUADA;
         titulo = `${t}×${f}=${t * f} — 🎓 Graduada · ${item.aciertos}✓ ${item.fallos}✗`;
       } else if (item.ultimaVez === null) {
-        color = COLORES_ESCALON[0];
+        color = HEAT_0;
         titulo = `${t}×${f}=${t * f} — No practicada`;
       } else {
         color = COLORES_ESCALON[Math.min(item.escalon + 1, COLORES_ESCALON.length - 1)];
@@ -1383,12 +1445,90 @@ function confirmarEliminar() {
 }
 
 // ═══════════════════════════════════════════════════════
+// PANELES LATERALES (ajustes y debug)
+// ═══════════════════════════════════════════════════════
+function renderAjustes() {
+  const switchSonido = document.getElementById('toggle-sonido');
+  if (switchSonido) {
+    switchSonido.classList.toggle('activo', PREFS.sonido);
+    switchSonido.setAttribute('aria-checked', String(PREFS.sonido));
+  }
+  document.querySelectorAll('.tema-opcion').forEach(btn => {
+    const activo = btn.dataset.tema === PREFS.tema;
+    btn.classList.toggle('activo', activo);
+    btn.setAttribute('aria-checked', String(activo));
+  });
+}
+
+function botonDePanel(id) {
+  return id === 'debug-panel'
+    ? document.getElementById('debug-tab')
+    : document.getElementById('btn-ajustes');
+}
+
+// Los botones flotantes desaparecen mientras hay un panel abierto,
+// para no tapar el botón de cerrar ni el contenido del panel.
+function actualizarBotonesFlotantes() {
+  const hayPanelAbierto = !!document.querySelector('.panel-lateral.abierto');
+  const gear = document.getElementById('btn-ajustes');
+  const tab = document.getElementById('debug-tab');
+  if (gear) gear.hidden = hayPanelAbierto;
+  if (tab) tab.hidden = hayPanelAbierto || !CONFIG.modoPrueba;
+}
+
+function abrirPanel(id, { conOverlay = true } = {}) {
+  const panel = document.getElementById(id);
+  if (!panel) return;
+
+  // Nunca apilar los dos paneles: cerramos el otro si estuviera abierto
+  document.querySelectorAll('.panel-lateral.abierto').forEach(p => {
+    if (p.id !== id) cerrarPanel(p.id);
+  });
+
+  panel.classList.add('abierto');
+  panel.setAttribute('aria-hidden', 'false');
+  if (conOverlay) document.getElementById('panel-overlay').hidden = false;
+  const btn = botonDePanel(id);
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+  actualizarBotonesFlotantes();
+}
+
+function cerrarPanel(id) {
+  const panel = document.getElementById(id);
+  if (!panel) return;
+  panel.classList.remove('abierto');
+  panel.setAttribute('aria-hidden', 'true');
+  const btn = botonDePanel(id);
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  // El fondo solo desaparece cuando no queda ningún panel abierto
+  if (!document.querySelector('.panel-lateral.abierto')) {
+    document.getElementById('panel-overlay').hidden = true;
+  }
+  actualizarBotonesFlotantes();
+}
+
+function alternarPanel(id) {
+  const panel = document.getElementById(id);
+  if (!panel) return;
+  if (panel.classList.contains('abierto')) cerrarPanel(id);
+  else abrirPanel(id);
+}
+
+function cerrarPaneles() {
+  document.querySelectorAll('.panel-lateral.abierto').forEach(p => cerrarPanel(p.id));
+}
+
+// ═══════════════════════════════════════════════════════
 // DEBUG
 // ═══════════════════════════════════════════════════════
 function initDebug() {
   if (!CONFIG.modoPrueba) return;
-  document.getElementById('debug-panel').hidden = false;
   actualizarDebugTiempo();
+  // En escritorio el panel arranca abierto (sin fondo, para poder usar la app);
+  // en móvil queda plegado tras la pestaña para no tapar botones.
+  const escritorio = window.matchMedia && window.matchMedia('(min-width: 768px)').matches;
+  if (escritorio) abrirPanel('debug-panel', { conOverlay: false });
+  actualizarBotonesFlotantes();
 }
 
 function actualizarDebugTiempo() {
@@ -1572,6 +1712,35 @@ document.getElementById('opcion-ext-wrapper').addEventListener('click', (e) => {
   renderProgreso();
 });
 
+// ---- Paneles laterales (ajustes y debug) ----
+document.getElementById('btn-ajustes').addEventListener('click', () => alternarPanel('panel-ajustes'));
+
+document.getElementById('panel-overlay').addEventListener('click', cerrarPaneles);
+
+document.querySelectorAll('.panel-cerrar').forEach(btn => {
+  btn.addEventListener('click', () => cerrarPanel(btn.dataset.cerrar));
+});
+
+document.getElementById('toggle-sonido').addEventListener('click', () => {
+  PREFS.sonido = !PREFS.sonido;
+  guardarPrefs();
+  renderAjustes();
+  if (PREFS.sonido) {
+    // Pequeña confirmación sonora al reactivar el sonido
+    initAudio();
+    pitido(880);
+  }
+});
+
+document.querySelectorAll('.tema-opcion').forEach(btn => {
+  btn.addEventListener('click', () => cambiarTema(btn.dataset.tema));
+});
+
+// Cerrar los paneles con Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') cerrarPaneles();
+});
+
 // ---- Modal: delegación ----
 document.getElementById('modal-overlay').addEventListener('click', (e) => {
   if (e.target.id === 'modal-cancelar') cerrarModal();
@@ -1589,6 +1758,8 @@ document.getElementById('modal-overlay').addEventListener('keydown', (e) => {
 
 // ---- Debug ----
 if (CONFIG.modoPrueba) {
+  document.getElementById('debug-tab').addEventListener('click', () => alternarPanel('debug-panel'));
+
   document.getElementById('debug-avanzar').addEventListener('click', () => {
     debugTimeOffset += DIA;
     actualizarDebugTiempo();
@@ -1631,6 +1802,8 @@ if (CONFIG.modoPrueba) {
 // INICIALIZACIÓN
 // ═══════════════════════════════════════════════════════
 function init() {
+  cargarPrefs();
+  aplicarTema();
   ESTADO = cargarTodo();
 
   const perfil = obtenerPerfilActivo();
@@ -1643,6 +1816,7 @@ function init() {
     mostrarPantalla('pantalla-perfiles');
   }
 
+  renderAjustes();
   initDebug();
 }
 

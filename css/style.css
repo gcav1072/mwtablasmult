@@ -32,14 +32,49 @@
   --warning-soft: rgba(245, 158, 11, 0.13);
   --danger: #ef4444;
   --danger-soft: rgba(239, 68, 68, 0.13);
+  /* Superficies de paneles laterales y fondos de overlays */
+  --overlay: rgba(0, 0, 0, 0.6);
+  --panel-bg: rgba(15, 8, 24, 0.97);
+  --panel-border: rgba(255, 255, 255, 0.1);
+  /* Celda "no practicada" del mapa de calor (cambia según el tema) */
+  --heat-0: #1e293b;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
   --shadow-glow: 0 0 24px rgba(139, 92, 246, 0.25);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --font: 'Cabin', system-ui, -apple-system, sans-serif;
+  --font-titulo: 'Poppins', system-ui, -apple-system, sans-serif;
   --transition: 0.25s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   TEMA CLARO
+   Solo se ajusta lo necesario: la paleta de acentos del
+   proyecto se mantiene intacta.
+   ═══════════════════════════════════════════════════════ */
+:root[data-theme="light"] {
+  --bg-primary: #f2f3fa;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(15, 23, 42, 0.04);
+  --bg-card-hover: rgba(15, 23, 42, 0.08);
+  --border-card: rgba(15, 23, 42, 0.1);
+  --border-card-hover: rgba(15, 23, 42, 0.2);
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --overlay: rgba(15, 23, 42, 0.35);
+  --panel-bg: rgba(255, 255, 255, 0.98);
+  --panel-border: rgba(15, 23, 42, 0.12);
+  --heat-0: #e2e8f0;
+  --shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.16);
+}
+
+:root[data-theme="light"] body::before {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(139, 92, 246, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(59, 130, 246, 0.14) 0%, transparent 60%);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -112,7 +147,15 @@ body::before {
 
 /* ═══════════════════════════════════════════════════════
    TYPOGRAPHY
+   Los títulos usan Poppins; el resto del texto, Cabin.
    ═══════════════════════════════════════════════════════ */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-titulo);
+}
+
 h1 {
   font-size: clamp(1.6rem, 5vw, 2.4rem);
   font-weight: 800;
@@ -587,6 +630,7 @@ h2 {
 }
 
 .pregunta {
+  font-family: var(--font-titulo);
   font-size: clamp(2.2rem, 10vw, 4rem);
   font-weight: 900;
   letter-spacing: -0.02em;
@@ -1265,12 +1309,12 @@ h2 {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--overlay);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 700;
   padding: 24px;
   animation: fadeIn 0.2s ease;
 }
@@ -1345,27 +1389,180 @@ h2 {
 }
 
 /* ═══════════════════════════════════════════════════════
-   DEBUG PANEL
+   PANELES LATERALES (ajustes y debug)
    ═══════════════════════════════════════════════════════ */
-.debug-panel {
+.panel-overlay {
   position: fixed;
-  bottom: 12px;
-  right: 12px;
-  background: rgba(15, 8, 24, 0.95);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  z-index: 200;
-  font-size: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 220px;
+  inset: 0;
+  background: var(--overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 540;
+  animation: fadeIn 0.2s ease;
 }
 
-.debug-panel h4 {
+.panel-lateral {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100dvh;
+  width: min(320px, 88vw);
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid var(--panel-border);
+  box-shadow: var(--shadow-lg);
+  z-index: 550;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform var(--transition), visibility 0s linear var(--transition);
+  overflow-y: auto;
+}
+
+.panel-lateral.abierto {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform var(--transition), visibility 0s;
+}
+
+.panel-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-cabecera h4 {
+  font-size: 1rem;
+}
+
+.panel-cerrar {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.panel-cerrar:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.panel-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Botones flotantes (ajustes y pestaña de debug) ── */
+.btn-flotante {
+  position: fixed;
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--border-card);
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 600;
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition), background var(--transition);
+}
+
+.btn-flotante:hover {
+  transform: scale(1.06);
+  background: var(--bg-card-hover);
+}
+
+.btn-ajustes {
+  top: 12px;
+}
+
+.debug-tab {
+  top: 62px;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* ── Contenido de Ajustes ── */
+.ajuste-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-card);
+}
+
+.ajuste-fila:last-child {
+  border-bottom: none;
+}
+
+.ajuste-columna {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.ajuste-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.selector-tema {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 4px;
+}
+
+.tema-opcion {
+  padding: 8px 6px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.tema-opcion:hover {
+  color: var(--text-primary);
+}
+
+.tema-opcion.activo {
+  background: var(--accent-gradient);
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+}
+
+/* ── Contenido de Debug ── */
+.debug-panel .panel-cabecera h4 {
   color: var(--danger);
-  font-size: 0.85rem;
 }
 
 .debug-panel p {
@@ -1374,13 +1571,13 @@ h2 {
 }
 
 .btn-debug {
-  padding: 6px 10px;
+  padding: 9px 12px;
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: var(--radius-sm);
   background: var(--danger-soft);
   color: #fca5a5;
   font-family: var(--font);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition);
@@ -1429,6 +1626,59 @@ h2 {
 
 .slide-in {
   animation: slideIn 0.3s ease-out;
+}
+
+/* ═══════════════════════════════════════════════════════
+   AJUSTES DEL TEMA CLARO
+   Solo los valores que en oscuro asumían fondo negro.
+   ═══════════════════════════════════════════════════════ */
+:root[data-theme="light"] .progreso-barra {
+  background: rgba(15, 23, 42, 0.1);
+}
+
+:root[data-theme="light"] .tecla:active {
+  background: rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme="light"] .circulo-track {
+  stroke: rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] .heatmap td:hover {
+  box-shadow: 0 0 12px rgba(15, 23, 42, 0.25);
+}
+
+:root[data-theme="light"] .toggle-switch:not(.activo) {
+  background: rgba(15, 23, 42, 0.18);
+}
+
+:root[data-theme="light"] .toggle-switch::after {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
+}
+
+:root[data-theme="light"] .btn-peligro,
+:root[data-theme="light"] .btn-debug,
+:root[data-theme="light"] .fallo-veces {
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .extra-sesion-aviso,
+:root[data-theme="light"] .fb-recordatorio {
+  color: #b45309;
+}
+
+:root[data-theme="light"] .fb-animo {
+  color: #6d28d9;
+}
+
+:root[data-theme="light"] .fb-copiar {
+  color: #5b21b6;
+}
+
+:root[data-theme="light"] .fb-pista {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.08);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1524,13 +1774,13 @@ h2 {
   .botones-inicio .btn-principal {
     width: 100%;
   }
+}
 
-  /* El panel debug (solo con ?debug=1) se compacta para no tapar botones */
-  .debug-panel {
-    padding: 8px 10px;
-    max-width: 160px;
-    font-size: 0.7rem;
-    gap: 6px;
+/* Los botones flotantes ⚙️ / 🛠️ viven arriba a la derecha: se reserva ese
+   espacio en la barra de progreso para que no tapen el contador ni la racha */
+@media (max-width: 600px) {
+  .barra-superior {
+    padding-right: 48px;
   }
 }
 
