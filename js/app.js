@@ -293,6 +293,7 @@ let avisoTimer = null;
 let audioCtx = null;
 let debugTimeOffset = 0;
 let pendingDeleteName = null;
+let cooldownTimer = null;
 
 const sesion = {
   cola: [],
@@ -826,6 +827,58 @@ function planSesionHoy(perfil) {
 // ═══════════════════════════════════════════════════════
 // RENDERIZADO: INICIO
 // ═══════════════════════════════════════════════════════
+// Refresca el botón «Empezar» según el cooldown entre sesiones.
+// Devuelve true si la sesión sigue en cooldown (útil para mantener el ticker vivo).
+function actualizarBotonEmpezar(perfil = obtenerPerfilActivo()) {
+  const btn = document.getElementById('btn-empezar');
+  if (!perfil || !btn) return false;
+
+  const now = ahora();
+  const items = paresVisibles(perfil);
+  const plan = planSesionHoy(perfil);
+  const ultimaSesion = perfil.sesiones.length > 0
+    ? perfil.sesiones[perfil.sesiones.length - 1].fecha
+    : null;
+  const tiempoDesdeUltima = ultimaSesion ? now - ultimaSesion : Infinity;
+  const enCooldown = ultimaSesion !== null && tiempoDesdeUltima < COOLDOWN_SESION;
+
+  if (enCooldown) {
+    btn.disabled = true;
+    const restanteMs = COOLDOWN_SESION - tiempoDesdeUltima;
+    let horas = Math.floor(restanteMs / (60 * 60 * 1000));
+    let minutos = Math.round((restanteMs % (60 * 60 * 1000)) / (60 * 1000));
+    if (minutos === 60) { horas++; minutos = 0; }
+    const textoTiempo = CONFIG.modoPrueba
+      ? `${Math.ceil(restanteMs / 1000)}s`
+      : horas > 0 ? `${horas}h ${minutos}min` : `${minutos}min`;
+    btn.textContent = T.enCooldown(textoTiempo);
+    return true;
+  }
+
+  const hayQueHacer = plan.pendientes > 0 || plan.nuevos > 0 || plan.retos > 0;
+  if (!hayQueHacer) {
+    const algunoDisponible = items.length > 0;
+    btn.disabled = !algunoDisponible;
+    btn.textContent = algunoDisponible ? T.empezar : T.todoAlDia;
+  } else {
+    btn.disabled = false;
+    btn.textContent = T.empezar;
+  }
+  return false;
+}
+
+// Cuenta atrás en vivo del cooldown: refresca el botón cada segundo mientras siga activo.
+function iniciarTickerCooldown() {
+  if (cooldownTimer) return;
+  cooldownTimer = setInterval(() => {
+    if (pantallaActual !== 'pantalla-inicio') return;
+    if (!actualizarBotonEmpezar()) {
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+    }
+  }, 1000);
+}
+
 function renderInicio() {
   const perfil = obtenerPerfilActivo();
   if (!perfil) return;
@@ -834,7 +887,6 @@ function renderInicio() {
   document.getElementById('saludo').textContent = T.saludo(nombre);
 
   // Stats rápidas
-  const now = ahora();
   const items = paresVisibles(perfil);
   const plan = planSesionHoy(perfil);
   const dominados = items.filter(i => i.escalon >= CONFIG.escalonDominada).length;
@@ -856,35 +908,8 @@ function renderInicio() {
   </div>
 `;
 
-  // Botón empezar — comprobar cooldown entre sesiones
-  const btn = document.getElementById('btn-empezar');
-  const ultimaSesion = perfil.sesiones.length > 0
-    ? perfil.sesiones[perfil.sesiones.length - 1].fecha
-    : null;
-  const tiempoDesdeUltima = ultimaSesion ? now - ultimaSesion : Infinity;
-  const enCooldown = ultimaSesion !== null && tiempoDesdeUltima < COOLDOWN_SESION;
-
-  if (enCooldown) {
-    btn.disabled = true;
-    const restanteMs = COOLDOWN_SESION - tiempoDesdeUltima;
-    let horas = Math.floor(restanteMs / (60 * 60 * 1000));
-    let minutos = Math.round((restanteMs % (60 * 60 * 1000)) / (60 * 1000));
-    if (minutos === 60) { horas++; minutos = 0; }
-    const textoTiempo = CONFIG.modoPrueba
-      ? `${Math.ceil(restanteMs / 1000)}s`
-      : horas > 0 ? `${horas}h ${minutos}min` : `${minutos}min`;
-    btn.textContent = T.enCooldown(textoTiempo);
-  } else {
-    const hayQueHacer = plan.pendientes > 0 || plan.nuevos > 0 || plan.retos > 0;
-    if (!hayQueHacer) {
-      const algunoDisponible = items.length > 0;
-      btn.disabled = !algunoDisponible;
-      btn.textContent = algunoDisponible ? T.empezar : T.todoAlDia;
-    } else {
-      btn.disabled = false;
-      btn.textContent = T.empezar;
-    }
-  }
+  // Botón empezar — comprobar cooldown entre sesiones (con cuenta atrás en vivo)
+  if (actualizarBotonEmpezar(perfil)) iniciarTickerCooldown();
 
   // Auto-desbloqueo
   const aviso = document.getElementById('aviso-tablas-extendidas');
