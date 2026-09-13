@@ -33,6 +33,8 @@ const T = {
   enCooldown: horasMin => `⏳ Vuelve en ${horasMin}`,
   stats: {
     pendientes: 'Para hoy',
+    // Valor de «Para hoy» mientras dura el cooldown (no hay nada que hacer hasta mañana)
+    enEspera: '--',
     dominadas: 'Dominadas',
     rachaMax: 'Racha',
     aciertos: 'Aciertos',
@@ -870,24 +872,25 @@ function planSesionHoy(perfil) {
 // ═══════════════════════════════════════════════════════
 // RENDERIZADO: INICIO
 // ═══════════════════════════════════════════════════════
+// ¿Cuánto queda del cooldown entre sesiones (ms)? `null` si ya se puede practicar.
+// Solo cuentan las sesiones TERMINADAS: salir a mitad de sesión no bloquea al niño.
+function restanteCooldown(perfil) {
+  const ultimaCompleta = [...perfil.sesiones].reverse().find(s => !s.parcial);
+  if (!ultimaCompleta) return null;
+  const restante = COOLDOWN_SESION - (ahora() - ultimaCompleta.fecha);
+  return restante > 0 ? restante : null;
+}
+
 // Refresca el botón «Empezar» según el cooldown entre sesiones.
 // Devuelve true si la sesión sigue en cooldown (útil para mantener el ticker vivo).
 function actualizarBotonEmpezar(perfil = obtenerPerfilActivo()) {
   const btn = document.getElementById('btn-empezar');
   if (!perfil || !btn) return false;
 
-  const now = ahora();
-  const items = paresVisibles(perfil);
-  const plan = planSesionHoy(perfil);
-  // El cooldown solo cuenta sesiones TERMINADAS: salir a mitad no bloquea al niño
-  const ultimaCompleta = [...perfil.sesiones].reverse().find(s => !s.parcial);
-  const ultimaSesion = ultimaCompleta ? ultimaCompleta.fecha : null;
-  const tiempoDesdeUltima = ultimaSesion ? now - ultimaSesion : Infinity;
-  const enCooldown = ultimaSesion !== null && tiempoDesdeUltima < COOLDOWN_SESION;
+  const restanteMs = restanteCooldown(perfil);
 
-  if (enCooldown) {
+  if (restanteMs !== null) {
     btn.disabled = true;
-    const restanteMs = COOLDOWN_SESION - tiempoDesdeUltima;
     let horas = Math.floor(restanteMs / (60 * 60 * 1000));
     let minutos = Math.round((restanteMs % (60 * 60 * 1000)) / (60 * 1000));
     if (minutos === 60) { horas++; minutos = 0; }
@@ -898,6 +901,8 @@ function actualizarBotonEmpezar(perfil = obtenerPerfilActivo()) {
     return true;
   }
 
+  const items = paresVisibles(perfil);
+  const plan = planSesionHoy(perfil);
   const hayQueHacer = plan.pendientes > 0 || plan.nuevos > 0 || plan.retos > 0;
   if (!hayQueHacer) {
     const algunoDisponible = items.length > 0;
@@ -918,6 +923,8 @@ function iniciarTickerCooldown() {
     if (!actualizarBotonEmpezar()) {
       clearInterval(cooldownTimer);
       cooldownTimer = null;
+      // Al terminar el cooldown hay que repintar: «Para hoy» recupera su número
+      renderInicio();
     }
   }, 1000);
 }
@@ -935,10 +942,13 @@ function renderInicio() {
   const dominados = items.filter(i => i.escalon >= CONFIG.escalonDominada).length;
   const total = items.length;
   const pct = total > 0 ? Math.round(dominados / total * 100) : 0;
+  // En cooldown no se puede practicar hasta mañana: mostrar las tarjetas del día
+  // siguiente confunde (parece que hay deberes pendientes y que se puede seguir ya)
+  const enEspera = restanteCooldown(perfil) !== null;
 
   document.getElementById('resumen-rapido').innerHTML = `
   <div class="stat-card glass">
-    <div class="stat-valor">${plan.total}</div>
+    <div class="stat-valor">${enEspera ? T.stats.enEspera : plan.total}</div>
     <div class="stat-label">${T.stats.pendientes}</div>
   </div>
   <div class="stat-card glass">
@@ -1553,6 +1563,9 @@ function renderProgreso() {
   const plan = planSesionHoy(perfil);
   const dominados = items.filter(i => i.escalon >= CONFIG.escalonDominada).length;
   const pct = items.length > 0 ? Math.round(dominados / items.length * 100) : 0;
+  // Mismo criterio que en Inicio: durante el cooldown «Para hoy» no adelanta
+  // las tarjetas del día siguiente
+  const enEspera = restanteCooldown(perfil) !== null;
 
   // Stats
   document.getElementById('progreso-stats').innerHTML = `
@@ -1561,7 +1574,7 @@ function renderProgreso() {
     <div class="stat-label">${T.stats.dominadas}</div>
   </div>
   <div class="stat-card glass">
-    <div class="stat-valor">${plan.total}</div>
+    <div class="stat-valor">${enEspera ? T.stats.enEspera : plan.total}</div>
     <div class="stat-label">${T.stats.pendientes}</div>
   </div>
   <div class="stat-card glass">

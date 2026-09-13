@@ -16,7 +16,7 @@ Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias n
   - **Salir a mitad de sesión**: el botón **←** de la esquina vuelve al inicio **guardando lo que ya se hizo** (registro parcial de la sesión, racha y medallas). No bloquea al niño con el tiempo de espera y, al volver, *"Para hoy"* muestra solo las tarjetas que faltan.
   - Sesiones diarias según el **ritmo del perfil**: Normal (15 tarjetas/día), Rápido (20) o Intenso (30). Si hay más fichas vencidas de las previstas, la sesión incluye **todas** las vencidas, de modo que el contador *"Para hoy"* de Inicio coincide siempre con el número de tarjetas de la sesión.
   - **Ritmo de estudio configurable**: al crear un perfil se eligen 3 ritmos con su tiempo estimado de sesión (Normal ≈ 5 min · Rápido ≈ 6 min · Intenso ≈ 9 min). También se pueden **cambiar las tarjetas diarias** después, desde la tarjeta *"⚡ Tarjetas diarias"* de la pantalla **Mi Progreso**.
-  - Cooldown de 20 horas entre sesiones completadas para fomentar el hábito diario sin sobrecargar.
+  - Cooldown de 20 horas entre sesiones completadas para fomentar el hábito diario sin sobrecargar. Mientras dura, *"Para hoy"* muestra **`--`** (no adelanta las tarjetas del día siguiente) y el botón indica cuánto falta para la próxima sesión.
   - Sistema de **repesca ilimitada**: las fichas falladas vuelven a preguntarse al final de la sesión, tantas veces como haga falta hasta acertarlas. Los fallos dentro de la repesca no penalizan las estadísticas.
   - **Rondas extra opcionales**: al terminar, se puede practicar en bloques de **+5 tarjetas** tantas veces como se quiera (se suman a la sesión del día).
 
