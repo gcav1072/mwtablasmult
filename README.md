@@ -10,8 +10,10 @@ Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias n
 
 - **🧠 Algoritmo de Repetición Espaciada (SRS):**
   - **7 niveles de dominio** con intervalos crecientes: 1, 3, 7, 14, 30, 60 y 90 días. Al superar el último, la ficha se **gradúa** y pasa a repasos de mantenimiento.
-  - **La velocidad de respuesta cuenta**: acertar en menos de 1,5 s sube **dos** escalones (memoria); entre 1,5 s y 4,5 s sube **uno** (automatizado); por encima de 4,5 s se acepta como correcto pero no avanza, porque aún lo está calculando. Un fallo baja hasta 2 escalones.
+  - **La velocidad de respuesta cuenta**: acertar en menos de 1,8 s sube **dos** escalones (memoria); entre 1,8 s y 4,5 s sube **uno** (automatizado); por encima de 4,5 s se acepta como correcto pero no avanza, porque aún lo está calculando. Un fallo baja hasta 2 escalones.
   - **Corrección obligatoria al fallar**: no hay auto-avance. Aparece el resultado correcto en grande y el niño debe **teclearlo** para continuar, lo que convierte el error en un repaso activo.
+  - **Botón «🤔 No lo sé»**: para cuando el niño se bloquea y no recuerda el número. En vez de quedarse atascado (el problema que reportaron los testers), se registra como fallo y entra en el mismo flujo de corrección: ve el resultado, la pista y lo escribe para continuar.
+  - **Salir a mitad de sesión**: el botón **←** de la esquina vuelve al inicio **guardando lo que ya se hizo** (registro parcial de la sesión, racha y medallas). No bloquea al niño con el tiempo de espera y, al volver, *"Para hoy"* muestra solo las tarjetas que faltan.
   - Sesiones diarias según el **ritmo del perfil**: Normal (15 tarjetas/día), Rápido (20) o Intenso (30). Si hay más fichas vencidas de las previstas, la sesión incluye **todas** las vencidas, de modo que el contador *"Para hoy"* de Inicio coincide siempre con el número de tarjetas de la sesión.
   - **Ritmo de estudio configurable**: al crear un perfil se eligen 3 ritmos con su tiempo estimado de sesión (Normal ≈ 5 min · Rápido ≈ 6 min · Intenso ≈ 9 min). También se pueden **cambiar las tarjetas diarias** después, desde la tarjeta *"⚡ Tarjetas diarias"* de la pantalla **Mi Progreso**.
   - Cooldown de 20 horas entre sesiones completadas para fomentar el hábito diario sin sobrecargar.
@@ -20,6 +22,7 @@ Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias n
 
 - **📊 Visualización del Progreso & Gamificación:**
   - **Matriz / Heatmap interactivo**: visualización de todas las multiplicaciones (tablas del 1 al 10, o hasta el 12) con código de colores según el nivel de dominio. Cada uno de los 7 niveles y el estado *graduada* usa una tonalidad claramente distinta (rojo → naranja → amarillo → lima → esmeralda → cian → azul → fucsia para las graduadas) y los **mismos colores** valen para tema claro y oscuro.
+  - **Detalle de cada tarjeta**: al pasar el cursor (o **tocar** en pantallas táctiles, donde el detalle queda fijo hasta tocar fuera) aparece un cuadro con la operación, el **estado** de esa multiplicación, una **gráfica de dona** de aciertos vs. fallos, las veces que se ha estudiado, los aciertos, los fallos, cuándo fue la última vez y cuándo toca el próximo repaso.
   - **Sistema de medallas**: 9 logros desbloqueables por hitos (primeros pasos, rachas, velocidad, dominio de tablas, graduación).
   - **Estadísticas detalladas**: racha actual y máxima, total de aciertos/fallos, tiempo medio de respuesta.
   - **Desbloqueo progresivo**: opción de activar las tablas del 11 y 12 automáticamente al alcanzar el 80% de dominio de las tablas básicas (o manualmente desde ajustes).

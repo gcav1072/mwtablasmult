@@ -944,11 +944,51 @@ h2 {
   }
 }
 
-/* Input display */
+/* Input display. El botón «no lo sé» vive en esta misma fila (44px dentro de
+   64px), así que no añade altura en ninguna resolución. */
 .zona-input {
   width: 100%;
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 8px;
+}
+
+/* Discreto a propósito: no debe competir con el ✓ ni invitar a pulsarlo por reflejo.
+   `align-self: stretch` lo iguala exactamente a la altura del cuadro de respuesta
+   sin números mágicos; el `min-height` evita que el objetivo táctil se encoja. */
+.btn-no-recuerdo {
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 44px;
+  padding: 0 clamp(8px, 2.4vw, 14px);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-card-hover);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: clamp(0.72rem, 2.4vw, 0.86rem);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-no-recuerdo:hover:not(:disabled) {
+  background: var(--bg-card-hover);
+  border-style: solid;
+  color: var(--text-primary);
+}
+
+.btn-no-recuerdo:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Durante el feedback y la corrección ya no tiene sentido */
+.btn-no-recuerdo:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .input-display {
@@ -1191,6 +1231,14 @@ h2 {
   margin-right: 8px;
 }
 
+/* «No lo recordaba»: no es una respuesta equivocada, así que no va tachado */
+.fallo-sin-respuesta {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-style: italic;
+  margin-right: 8px;
+}
+
 .resumen-medallas {
   display: flex;
   flex-wrap: wrap;
@@ -1253,14 +1301,20 @@ h2 {
   /* Borde interior sutil: separa celdas de tono parecido en ambos temas */
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  cursor: default;
+  cursor: pointer;
   position: relative;
+  /* Evita el retardo de doble toque al abrir el detalle en móvil */
+  touch-action: manipulation;
 }
 
-.heatmap td:hover {
-  transform: scale(1.35);
-  z-index: 2;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+/* El zoom al pasar el ratón solo en dispositivos con puntero real: en táctil
+   el :hover se queda "pegado" y la casilla no volvería a su tamaño */
+@media (hover: hover) {
+  .heatmap td:hover {
+    transform: scale(1.35);
+    z-index: 2;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+  }
 }
 
 .leyenda {
@@ -1283,6 +1337,185 @@ h2 {
   height: 14px;
   border-radius: 3px;
   flex-shrink: 0;
+}
+
+.leyenda-ayuda {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ── Detalle de una casilla (tooltip reutilizado) ──
+   Se posiciona en fixed sobre la casilla activa y queda por debajo de los
+   paneles laterales (540) y del modal (700). */
+.heat-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 500;
+  pointer-events: none;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 20px));
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.heat-tip.visible {
+  animation: tipCalorIn 0.14s ease-out;
+}
+
+@keyframes tipCalorIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.heat-tip-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.heat-tip-op {
+  font-family: var(--font-titulo);
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.heat-tip-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  /* Puede encogerse y partir el nombre del estado antes que desbordar */
+  min-width: 0;
+  text-align: right;
+}
+
+/* Punto de color con el tono del nivel: legible en ambos temas sin
+   depender del contraste del texto sobre cada color del heatmap */
+.heat-tip-estado-punto {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--estado, var(--text-muted));
+}
+
+.heat-tip-cuerpo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.heat-tip-dona-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* Dona aciertos/fallos con conic-gradient puro (sin SVG ni canvas) */
+.heat-tip-dona {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: conic-gradient(var(--success) 0 var(--pct, 0%), var(--danger) var(--pct, 0%) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.heat-tip-dona::after {
+  content: '';
+  position: absolute;
+  inset: 11px;
+  border-radius: 50%;
+  background: var(--panel-bg);
+}
+
+.heat-tip-dona span {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-titulo);
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.heat-tip-dona.sin-datos {
+  background: conic-gradient(var(--text-muted) 0 100%);
+}
+
+.heat-tip-dona-pie {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.heat-tip-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.78rem;
+  min-width: 0;
+}
+
+.heat-tip-fila {
+  display: flex;
+  /* Con `wrap`, un valor que no cabe junto a la etiqueta baja a su propia línea
+     y usa todo el ancho, en vez de partirse en una columna estrecha */
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 10px;
+  color: var(--text-secondary);
+}
+
+/* La etiqueta nunca se parte; el valor puede (ver `.heat-tip-fila b`) */
+.heat-tip-fila > span {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.heat-tip-fila b {
+  font-weight: 700;
+  color: var(--text-primary);
+  /* `margin-left: auto` lo mantiene a la derecha tanto si comparte línea con la
+     etiqueta como si ha bajado a la suya. `min-width: 0` permite encogerlo. */
+  margin-left: auto;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: break-word;
+}
+
+.heat-tip-fila b.ok {
+  color: var(--success);
+}
+
+.heat-tip-fila b.mal {
+  color: var(--danger);
 }
 
 .medallas-showcase {
@@ -1859,6 +2092,15 @@ h2 {
   top: 12px;
 }
 
+/* Salir de la sesión: esquina opuesta al ⚙️ y lejos del teclado */
+.btn-salir {
+  top: 12px;
+  left: 12px;
+  right: auto;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
 .debug-tab {
   top: 62px;
   border-color: rgba(239, 68, 68, 0.4);
@@ -2006,8 +2248,10 @@ h2 {
   stroke: rgba(15, 23, 42, 0.08);
 }
 
-:root[data-theme="light"] .heatmap td:hover {
-  box-shadow: 0 0 12px rgba(15, 23, 42, 0.25);
+@media (hover: hover) {
+  :root[data-theme="light"] .heatmap td:hover {
+    box-shadow: 0 0 12px rgba(15, 23, 42, 0.25);
+  }
 }
 
 :root[data-theme="light"] .heatmap td {
@@ -2241,11 +2485,12 @@ h2 {
   }
 }
 
-/* Los botones flotantes ⚙️ / 🛠️ viven arriba a la derecha: se reserva ese
-   espacio en la barra de progreso para que no tapen el contador ni la racha */
+/* Los botones flotantes ⚙️ / ← viven arriba a la derecha/izquierda: se reserva
+   ese espacio en la barra de progreso para que no tapen el contador ni la racha */
 @media (max-width: 600px) {
   .barra-superior {
     padding-right: 48px;
+    padding-left: 48px;
   }
 }
 

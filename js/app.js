@@ -64,11 +64,18 @@ const T = {
     titulo: 'Resumen de la sesión',
     fallados: 'Revisa estos errores:',
     sinFallos: '¡Ningún fallo! 🎉',
+    noRecordado: 'No lo recordaba',
     nuevasMedallas: '🏅 ¡Medallas nuevas!',
     volver: 'Volver al inicio',
   },
   repesca: (ronda, restantes) =>
     `🔄 Repesca ${ronda} · ${restantes} restante${restantes !== 1 ? 's' : ''}`,
+  // Botones de la pantalla de práctica
+  practica: {
+    salir: 'Salir al inicio y guardar el progreso',
+    noRecuerdo: '🤔 No lo sé',
+    noRecuerdoAria: 'No lo recuerdo, muéstrame el resultado',
+  },
   desbloqueo: {
     mensaje: '🎉 ¡Has dominado el 80% de las tablas! ¿Quieres desbloquear las tablas del 11 y 12?',
     boton: '✨ ¡Sí, desbloquear!',
@@ -103,7 +110,7 @@ const T = {
         },
         {
           icono: '⏱️', titulo: 'La velocidad importa',
-          texto: 'Si responde en menos de 1,5 s, se considera memoria y sube dos escalones de golpe. Hasta 4,5 s cuenta como respuesta automática y sube uno. Si tarda más, se acepta como correcta pero no avanza: todavía lo está calculando, no lo tiene memorizado.',
+          texto: 'Si responde en menos de 1,8 s, se considera memoria y sube dos escalones de golpe. Hasta 4,5 s cuenta como respuesta automática y sube uno. Si tarda más, se acepta como correcta pero no avanza: todavía lo está calculando, no lo tiene memorizado.',
         },
         {
           icono: '✍️', titulo: 'Si falla, escribe la respuesta',
@@ -183,7 +190,21 @@ const T = {
       '¡Tú puedes! Mañana lo harás todavía mejor 💫',
     ],
   },
-  leyenda: ['No practicada', 'Empezando', 'Aprendiendo', 'Progresando', 'Bien', 'Dominada', 'Consolidada', 'Casi graduada', '¡Graduada! 🎓'],
+  leyenda: ['No practicada', 'Empezando', 'Aprendiendo', 'Progresando', 'Bien', 'Dominada', 'Consolidada', 'Casi graduada', '¡Graduada!'],
+  // Detalle de una casilla del mapa de calor (hover en escritorio, toque en táctil)
+  heatmap: {
+    ayuda: '💡 Pasa el cursor (o toca) una casilla para ver su detalle',
+    sinPracticar: 'Sin practicar todavía',
+    veces: 'veces',
+    ultima: 'Última vez',
+    proximo: 'Próximo repaso',
+    hoy: 'hoy',
+    ayer: 'ayer',
+    haceDias: n => `hace ${n} día${n === 1 ? '' : 's'}`,
+    enDias: n => `en ${n} día${n === 1 ? '' : 's'}`,
+    tocaRepasar: '¡Ya toca repasarla!',
+    retoMantenimiento: '🎓 Reto de mantenimiento',
+  },
   // Ficha de identidad de la marca (se pinta en Ajustes → «Acerca de»)
   identidad: {
     marca: 'Mathwizards Consultoría Educativa STEM',
@@ -219,7 +240,7 @@ const CONFIG = {
   // 7 niveles de dominio (índice 0..6 = Nivel 1..7)
   escalonesDias: [1, 3, 7, 14, 30, 60, 90],
   // Tramos de latencia: premia la evocación automática y frena el cálculo secuencial
-  umbralInstantaneoMs: 1500,
+  umbralInstantaneoMs: 1800,
   umbralAutomaticoMs: 4500,
   // A partir de este nivel (0-indexado) la ficha cuenta como "Dominada"
   escalonDominada: 4,
@@ -294,6 +315,11 @@ let audioCtx = null;
 let debugTimeOffset = 0;
 let pendingDeleteName = null;
 let cooldownTimer = null;
+// Detalle de una casilla del mapa de calor: un único nodo reutilizado en <body>.
+// En táctil el detalle queda fijo (heatTipPinned) hasta tocar fuera u otra casilla.
+let heatTipPinned = false;
+let heatTipTd = null;
+const heatTipEl = document.getElementById('heat-tip');
 
 const sesion = {
   cola: [],
@@ -551,7 +577,7 @@ function sonidoMedalla() {
 // ALGORITMO DE REPETICIÓN ESPACIADA
 // ═══════════════════════════════════════════════════════
 // ── Clasificación por latencia ──
-// instantaneo (<1,5s): evocación directa  ·  automatico (1,5-4,5s): automatizado
+// instantaneo (<1,8s): evocación directa  ·  automatico (1,8-4,5s): automatizado
 // titubeante (>4,5s): acierta pero calculando  ·  fallo
 function clasificar(esCorrecto, ms) {
   if (!esCorrecto) return 'fallo';
@@ -708,15 +734,15 @@ function generarPista(t, f) {
 // ═══════════════════════════════════════════════════════
 // MEDALLAS — VERIFICACIÓN
 // ═══════════════════════════════════════════════════════
-function verificarMedallas(perfil, stats) {
+function verificarMedallas(perfil, stats, sesionCompleta = true) {
   const m = perfil.medallas || [];
   const nuevas = [];
 
   function tiene(id) { return m.includes(id); }
   function dar(id) { if (!tiene(id)) { nuevas.push(id); } }
 
-  // Primera sesión
-  if (perfil.sesiones.length >= 1) dar('primera_sesion');
+  // Primera sesión (solo cuenta una sesión terminada)
+  if (sesionCompleta && perfil.sesiones.length >= 1) dar('primera_sesion');
 
   // Racha 10 en sesión
   if (stats.rachaMax >= 10) dar('racha_10');
@@ -744,10 +770,10 @@ function verificarMedallas(perfil, stats) {
   if (stats.velocidadRachaActual >= 5) dar('velocista');
 
   // Estudioso (10 sesiones)
-  if (perfil.sesiones.length >= 10) dar('estudioso');
+  if (sesionCompleta && perfil.sesiones.length >= 10) dar('estudioso');
 
-  // Perfección (0 fallos en sesión con al menos 5 preguntas)
-  if (stats.fallos === 0 && stats.aciertos >= 5) dar('perfeccion');
+  // Perfección (0 fallos en sesión terminada con al menos 5 preguntas)
+  if (sesionCompleta && stats.fallos === 0 && stats.aciertos >= 5) dar('perfeccion');
 
   perfil.medallas = [...m, ...nuevas];
   return nuevas;
@@ -757,12 +783,17 @@ function verificarMedallas(perfil, stats) {
 // NAVEGACIÓN
 // ═══════════════════════════════════════════════════════
 function mostrarPantalla(id) {
+  // Al cambiar de pantalla el detalle del heatmap deja de tener sentido
+  heatTipPinned = false;
+  ocultarTipCalor();
   document.querySelectorAll('.pantalla').forEach(p => p.hidden = true);
   const el = document.getElementById(id);
   if (el) {
     el.hidden = false;
     pantallaActual = id;
   }
+  // El botón de salir solo tiene sentido mientras se está practicando
+  actualizarBotonesFlotantes();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -810,6 +841,16 @@ function esc(str) {
 // La sesión hace al menos las tarjetas del ritmo del perfil, pero si hay más
 // fichas vencidas de las previstas las incluye TODAS para no dejar deberes atrás.
 // El número que muestra "Para hoy" es exactamente el que tendrá la sesión.
+// Preguntas ya respondidas hoy si el niño salió a mitad de sesión. Se deriva del
+// último registro parcial (sin campo extra en el modelo de datos): así "Para hoy"
+// muestra lo que falta y no vuelve a pedir la sesión entera.
+function hechasHoy(perfil) {
+  const ultima = perfil.sesiones[perfil.sesiones.length - 1];
+  if (!ultima || !ultima.parcial) return 0;
+  if (ahora() - ultima.fecha >= COOLDOWN_SESION) return 0; // de otro día
+  return ultima.aciertos + ultima.fallos;
+}
+
 function planSesionHoy(perfil) {
   const now = ahora();
   const items = paresVisibles(perfil);
@@ -818,8 +859,10 @@ function planSesionHoy(perfil) {
   const nuevos = activos.filter(i => i.ultimaVez === null).length;
   const nuevosEnSesion = Math.min(nuevos, CONFIG.maxNuevosPorSesion);
   const retos = Math.min(retosVencidos(perfil).length, CONFIG.maxRetosPorSesion);
-  // Objetivo de fichas activas (sin retos): la base del ritmo, o todas las vencidas + nuevas
-  const objetivo = Math.max(tarjetasBase(perfil), pendientes + nuevosEnSesion);
+  // Objetivo de fichas activas (sin retos): la base del ritmo (menos lo ya hecho
+  // hoy si se salió a mitad), o todas las vencidas + nuevas si son más
+  const base = Math.max(0, tarjetasBase(perfil) - hechasHoy(perfil));
+  const objetivo = Math.max(base, pendientes + nuevosEnSesion);
   const total = Math.min(objetivo, activos.length) + retos;
   return { pendientes, nuevos, nuevosEnSesion, retos, objetivo, total };
 }
@@ -836,9 +879,9 @@ function actualizarBotonEmpezar(perfil = obtenerPerfilActivo()) {
   const now = ahora();
   const items = paresVisibles(perfil);
   const plan = planSesionHoy(perfil);
-  const ultimaSesion = perfil.sesiones.length > 0
-    ? perfil.sesiones[perfil.sesiones.length - 1].fecha
-    : null;
+  // El cooldown solo cuenta sesiones TERMINADAS: salir a mitad no bloquea al niño
+  const ultimaCompleta = [...perfil.sesiones].reverse().find(s => !s.parcial);
+  const ultimaSesion = ultimaCompleta ? ultimaCompleta.fecha : null;
   const tiempoDesdeUltima = ultimaSesion ? now - ultimaSesion : Infinity;
   const enCooldown = ultimaSesion !== null && tiempoDesdeUltima < COOLDOWN_SESION;
 
@@ -1012,6 +1055,7 @@ function renderPregunta() {
 
   document.getElementById('input-respuesta').className = 'input-display glass';
   document.getElementById('cursor').hidden = false;
+  document.getElementById('btn-no-recuerdo').disabled = false;
 }
 
 function agregarDigito(d) {
@@ -1042,8 +1086,19 @@ function confirmarRespuesta() {
     setTimeout(() => document.getElementById('input-respuesta').classList.remove('shake'), 400);
     return;
   }
+  resolverRespuesta(parseInt(inputActual, 10));
+}
 
-  const respuestaUsuario = parseInt(inputActual, 10);
+// «No lo sé»: el niño se bloquea y lo dice. Cuenta como fallo y entra al mismo
+// flujo de corrección que un error, así aprende el resultado en vez de quedarse
+// atascado mirando la pantalla. `respuestaUsuario = null` = no hubo respuesta.
+function noLoRecuerdo() {
+  if (feedbackActivo || corrigiendo) return;
+  if (!sesion.itemActual) return;
+  resolverRespuesta(null);
+}
+
+function resolverRespuesta(respuestaUsuario) {
   const item = sesion.itemActual;
   const { t, f } = sesion.orientacionActual;
   const respuestaCorrecta = t * f;
@@ -1091,7 +1146,9 @@ function confirmarRespuesta() {
     }
   }
 
-  sesion.stats.tiempos.push(ms);
+  // El tiempo solo cuenta como dato con una respuesta real: decir «no lo sé»
+  // no debe inflar el tiempo medio de la sesión
+  if (respuestaUsuario !== null) sesion.stats.tiempos.push(ms);
   guardarTodo();
 
   mostrarFeedback(item, resultado, respuestaCorrecta);
@@ -1131,6 +1188,9 @@ function mostrarFeedback(item, resultado, respuestaCorrecta) {
   const zona = document.getElementById('zona-pregunta');
   const inputEl = document.getElementById('input-respuesta');
   const cursor = document.getElementById('cursor');
+
+  // Mientras dura el feedback (o la corrección) el botón ya no tiene sentido
+  document.getElementById('btn-no-recuerdo').disabled = true;
 
   // ── Fallo: modo corrección, sin temporizador ──
   if (resultado === 'fallo') {
@@ -1239,29 +1299,98 @@ function actualizarRacha() {
   }
 }
 
+// Tiempo medio de las respuestas de la sesión (0 si no hubo ninguna)
+function tiempoMedioSesion() {
+  const t = sesion.stats.tiempos;
+  return t.length > 0 ? Math.round(t.reduce((a, b) => a + b, 0) / t.length) : 0;
+}
+
+// Suma una ronda a un registro de sesión existente (media de tiempo ponderada).
+// Lo usan las rondas extra y el retomar una sesión parcial del mismo día.
+function combinarEnSesion(destino, stats, tiempoMedio, duracion) {
+  const preguntasPrev = destino.aciertos + destino.fallos;
+  const preguntasRonda = stats.aciertos + stats.fallos;
+  const totalPreguntas = preguntasPrev + preguntasRonda;
+  destino.tiempoMedio = totalPreguntas > 0
+    ? Math.round((destino.tiempoMedio * preguntasPrev + tiempoMedio * preguntasRonda) / totalPreguntas)
+    : tiempoMedio;
+  destino.aciertos += stats.aciertos;
+  destino.fallos += stats.fallos;
+  destino.duracion += duracion;
+  destino.fecha = ahora();
+}
+
+// ¿La última sesión es un registro parcial del mismo día? (se puede continuar)
+function parcialVigente(perfil) {
+  const ultima = perfil.sesiones[perfil.sesiones.length - 1];
+  return !!ultima && !!ultima.parcial && (ahora() - ultima.fecha) < COOLDOWN_SESION;
+}
+
+// Guarda lo hecho al salir a mitad de sesión. Si ya había un parcial del mismo
+// día se combina, así salir dos veces no infla el histórico de sesiones.
+function registrarSesionParcial(perfil, tiempoMedio, duracion) {
+  if (parcialVigente(perfil)) {
+    combinarEnSesion(perfil.sesiones[perfil.sesiones.length - 1], sesion.stats, tiempoMedio, duracion);
+    return;
+  }
+  perfil.sesiones.push({
+    fecha: ahora(),
+    aciertos: sesion.stats.aciertos,
+    fallos: sesion.stats.fallos,
+    tiempoMedio,
+    duracion,
+    parcial: true,
+  });
+}
+
+// Salir al inicio sin terminar: se guarda lo ya hecho y **no** se activa el
+// cooldown, para que el niño pueda volver y seguir donde lo dejó.
+function salirDeSesion() {
+  const perfil = obtenerPerfilActivo();
+
+  // Cancelar el avance pendiente: si no, el temporizador seguiría corriendo
+  clearTimeout(feedbackTimer);
+  feedbackTimer = null;
+  feedbackActivo = false;
+  corrigiendo = false;
+
+  if (perfil) {
+    const respondidas = sesion.stats.aciertos + sesion.stats.fallos;
+    if (respondidas > 0) {
+      registrarSesionParcial(perfil, tiempoMedioSesion(), ahora() - sesion.inicioSesion);
+      perfil.rachaMaxima = Math.max(perfil.rachaMaxima || 0, sesion.stats.rachaMax);
+      // Se conservan las medallas de esfuerzo (racha, velocidad, dominio); las que
+      // exigen haber terminado la sesión se otorgan cuando la termine de verdad
+      verificarMedallas(perfil, sesion.stats, false);
+      guardarTodo();
+    }
+  }
+
+  // Limpiar el estado de la sesión abandonada
+  sesion.cola = [];
+  sesion.repesca = [];
+  sesion.itemActual = null;
+  inputActual = '';
+  intentosFallidos = {};
+  document.getElementById('pantalla-practica').classList.remove('corrigiendo');
+
+  renderInicio();
+  mostrarPantalla('pantalla-inicio');
+}
+
 function terminarSesion() {
   const perfil = obtenerPerfilActivo();
   if (!perfil) return;
 
-  const tiempoMedio = sesion.stats.tiempos.length > 0
-    ? Math.round(sesion.stats.tiempos.reduce((a, b) => a + b, 0) / sesion.stats.tiempos.length)
-    : 0;
-
+  const tiempoMedio = tiempoMedioSesion();
   const duracion = ahora() - sesion.inicioSesion;
 
-  // Las rondas extra se suman a la sesión del día (no cuentan como sesión nueva)
-  if (sesion.esExtra && perfil.sesiones.length > 0) {
-    const ultima = perfil.sesiones[perfil.sesiones.length - 1];
-    const preguntasPrev = ultima.aciertos + ultima.fallos;
-    const preguntasRonda = sesion.stats.aciertos + sesion.stats.fallos;
-    const totalPreguntas = preguntasPrev + preguntasRonda;
-    ultima.tiempoMedio = totalPreguntas > 0
-      ? Math.round((ultima.tiempoMedio * preguntasPrev + tiempoMedio * preguntasRonda) / totalPreguntas)
-      : tiempoMedio;
-    ultima.aciertos += sesion.stats.aciertos;
-    ultima.fallos += sesion.stats.fallos;
-    ultima.duracion += duracion;
-    ultima.fecha = ahora();
+  // Las rondas extra y una sesión parcial del mismo día se suman al registro
+  // existente en vez de crear una sesión nueva: el día cuenta como una sola
+  const ultima = perfil.sesiones[perfil.sesiones.length - 1];
+  if (ultima && (sesion.esExtra || parcialVigente(perfil))) {
+    combinarEnSesion(ultima, sesion.stats, tiempoMedio, duracion);
+    ultima.parcial = false;
   } else {
     perfil.sesiones.push({
       fecha: ahora(),
@@ -1359,11 +1488,13 @@ function renderResumen(stats, tiempoMedio, nuevasMedallas, desbloquear) {
     <div class="resumen-fallados-titulo">${T.resumen.fallados}</div>
     ${stats.itemsFallados.map(f => {
       const veces = intentosFallidos[claveCanonica(f.t, f.f)] || 1;
+      // Sin respuesta = dijo «no lo sé»: no es un error tachado, es otra cosa
+      const sinRespuesta = f.respuestaUsuario === null;
       return `
       <div class="fallo-item glass">
         <span class="fallo-pregunta">${f.t} × ${f.f}${veces > 1 ? ` <span class="fallo-veces">×${veces}</span>` : ''}</span>
         <span>
-          <span class="fallo-tuya">${f.respuestaUsuario}</span>
+          <span class="${sinRespuesta ? 'fallo-sin-respuesta' : 'fallo-tuya'}">${sinRespuesta ? T.resumen.noRecordado : f.respuestaUsuario}</span>
           <span class="fallo-respuesta">${f.respuestaCorrecta}</span>
         </span>
       </div>
@@ -1450,6 +1581,7 @@ function renderProgreso() {
     <span>${T.leyenda[i]}</span>
   </div>
 `).join('');
+  document.getElementById('heat-ayuda').textContent = T.heatmap.ayuda;
 
   // Medallas
   renderMedallasProgreso(perfil);
@@ -1480,7 +1612,120 @@ function renderProgreso() {
 `;
 }
 
+// ═══════════════════════════════════════════════════════
+// DETALLE DE UNA CASILLA DEL MAPA DE CALOR
+// Un único nodo (#heat-tip) reutilizado: eventos delegados en #mapa-calor,
+// sin listeners por celda ni markup extra en las ~100 casillas.
+// ═══════════════════════════════════════════════════════
+
+// Estado de una ficha reutilizando la leyenda y los colores del heatmap
+function estadoDeItem(item) {
+  if (!item || item.ultimaVez === null) {
+    return { nombre: T.heatmap.sinPracticar, color: HEAT_0 };
+  }
+  if (item.graduada) return { nombre: T.leyenda[8], color: COLOR_GRADUADA };
+  const idx = Math.min(item.escalon + 1, COLORES_ESCALON.length - 1);
+  return { nombre: T.leyenda[idx], color: COLORES_ESCALON[idx] };
+}
+
+// Días que faltan (≥0) hasta una marca de tiempo, en "días" del sistema
+// (en modo debug DIA dura 10 s, así que las fechas de prueba cuadran)
+function diasHasta(ts) {
+  return Math.max(0, Math.round((ts - ahora()) / DIA));
+}
+
+function haceTiempo(ts) {
+  const dias = Math.max(0, Math.floor((ahora() - ts) / DIA));
+  if (dias === 0) return T.heatmap.hoy;
+  if (dias === 1) return T.heatmap.ayer;
+  return T.heatmap.haceDias(dias);
+}
+
+// Próximo repaso: "en X días", "¡Ya toca repasarla!" o "🎓 Reto de mantenimiento · en X días"
+function proximoRepaso(item) {
+  const ts = item.graduada ? item.proximoReto : item.proximaRevision;
+  const dias = diasHasta(ts);
+  if (dias === 0) return T.heatmap.tocaRepasar;
+  const cuando = T.heatmap.enDias(dias);
+  return item.graduada ? `${T.heatmap.retoMantenimiento} · ${cuando}` : cuando;
+}
+
+// Dona aciertos (verde) / fallos (rojo) con conic-gradient puro: sin SVG ni canvas.
+// El total de respuestas va en el centro; gris cuando aún no hay datos.
+function htmlDonaCalor(aciertos, fallos) {
+  const total = aciertos + fallos;
+  const pct = total > 0 ? Math.round(aciertos / total * 100) : 0;
+  return `
+    <div class="heat-tip-dona-wrap" aria-hidden="true">
+      <div class="heat-tip-dona${total > 0 ? '' : ' sin-datos'}" style="--pct:${pct}%">
+        <span>${total}</span>
+      </div>
+      <span class="heat-tip-dona-pie">${T.heatmap.veces}</span>
+    </div>`;
+}
+
+// Contenido del detalle de una ficha (item puede ser null si no está disponible)
+function buildHeatTip(item, t, f) {
+  const estado = estadoDeItem(item);
+  const practicada = !!item && item.ultimaVez !== null;
+  const aciertos = item ? item.aciertos : 0;
+  const fallos = item ? item.fallos : 0;
+  return `
+    <div class="heat-tip-cabecera">
+      <span class="heat-tip-op">${t}×${f}=${t * f}</span>
+      <span class="heat-tip-estado" style="--estado:${estado.color}">
+        <span class="heat-tip-estado-punto"></span>${estado.nombre}
+      </span>
+    </div>
+    <div class="heat-tip-cuerpo">
+      ${htmlDonaCalor(aciertos, fallos)}
+      <div class="heat-tip-datos">
+        <div class="heat-tip-fila"><span>${T.stats.aciertos}</span><b class="ok">${aciertos}</b></div>
+        <div class="heat-tip-fila"><span>${T.stats.fallos}</span><b class="mal">${fallos}</b></div>
+        <div class="heat-tip-fila"><span>${T.heatmap.ultima}</span><b>${practicada ? haceTiempo(item.ultimaVez) : '—'}</b></div>
+        <div class="heat-tip-fila"><span>${T.heatmap.proximo}</span><b>${practicada ? proximoRepaso(item) : '—'}</b></div>
+      </div>
+    </div>`;
+}
+
+// Coloca el detalle sobre la casilla: centrado, sin salirse del viewport y
+// prefiriendo la parte de arriba (si no cabe, debajo)
+function posicionarTipCalor(td) {
+  const r = td.getBoundingClientRect();
+  const m = 10;
+  const w = heatTipEl.offsetWidth;
+  const h = heatTipEl.offsetHeight;
+  const left = Math.max(m, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - m));
+  let top = r.top - h - m;
+  if (top < m) top = r.bottom + m;
+  top = Math.max(m, Math.min(top, window.innerHeight - h - m));
+  heatTipEl.style.left = `${Math.round(left)}px`;
+  heatTipEl.style.top = `${Math.round(top)}px`;
+}
+
+function mostrarTipCalor(td) {
+  const perfil = obtenerPerfilActivo();
+  if (!perfil || !td) return;
+  const t = Number(td.dataset.t);
+  const f = Number(td.dataset.f);
+  const item = perfil.items[claveCanonica(t, f)] || null;
+  heatTipEl.innerHTML = buildHeatTip(item, t, f);
+  heatTipEl.hidden = false;
+  posicionarTipCalor(td);
+  heatTipEl.classList.add('visible');
+  heatTipTd = td;
+}
+
+function ocultarTipCalor() {
+  if (!heatTipEl || heatTipEl.hidden) return;
+  heatTipEl.hidden = true;
+  heatTipEl.classList.remove('visible');
+  heatTipTd = null;
+}
+
 function renderMapaCalor(perfil, tabs) {
+  heatTipPinned = false;
+  ocultarTipCalor();
   const contenedor = document.getElementById('mapa-calor');
   let html = '<table class="heatmap"><thead><tr><th></th>';
 
@@ -1492,23 +1737,15 @@ function renderMapaCalor(perfil, tabs) {
   for (const t of tabs) {
     html += `<tr><th>${t}</th>`;
     for (const f of CONFIG.factores) {
-      const key = claveCanonica(t, f);
-      const item = perfil.items[key];
-      let color, titulo;
-      if (!item) {
-        color = HEAT_0;
-        titulo = `${t}×${f} — No disponible`;
-      } else if (item.graduada) {
-        color = COLOR_GRADUADA;
-        titulo = `${t}×${f}=${t * f} — 🎓 Graduada · ${item.aciertos}✓ ${item.fallos}✗`;
-      } else if (item.ultimaVez === null) {
-        color = HEAT_0;
-        titulo = `${t}×${f}=${t * f} — No practicada`;
-      } else {
-        color = COLORES_ESCALON[Math.min(item.escalon + 1, COLORES_ESCALON.length - 1)];
-        titulo = `${t}×${f}=${t * f} — Nivel ${item.escalon + 1} · ${item.aciertos}✓ ${item.fallos}✗`;
-      }
-      html += `<td style="background:${color}" title="${titulo}"></td>`;
+      const item = perfil.items[claveCanonica(t, f)];
+      // Nombre y color salen de la MISMA fuente (estadoDeItem): si se duplica la
+      // lógica aquí, una ficha graduada puede acabar pintada como "Casi graduada".
+      const estado = estadoDeItem(item);
+      // aria-label: los lectores de pantalla leen el detalle sin necesidad de hover
+      const datos = item
+        ? `${estado.nombre}. ${T.stats.aciertos}: ${item.aciertos}. ${T.stats.fallos}: ${item.fallos}.`
+        : `${estado.nombre}.`;
+      html += `<td data-t="${t}" data-f="${f}" style="background:${estado.color}" aria-label="${t} × ${f} = ${t * f}. ${datos}"></td>`;
     }
     html += '</tr>';
   }
@@ -1748,8 +1985,10 @@ function actualizarBotonesFlotantes() {
   const hayPanelAbierto = !!document.querySelector('.panel-lateral.abierto');
   const gear = document.getElementById('btn-ajustes');
   const tab = document.getElementById('debug-tab');
+  const salir = document.getElementById('btn-salir');
   if (gear) gear.hidden = hayPanelAbierto;
   if (tab) tab.hidden = hayPanelAbierto || !CONFIG.modoPrueba;
+  if (salir) salir.hidden = hayPanelAbierto || pantallaActual !== 'pantalla-practica';
 }
 
 function abrirPanel(id, { conOverlay = true } = {}) {
@@ -1844,6 +2083,11 @@ document.addEventListener('keydown', (e) => {
     confirmarRespuesta();
   }
 });
+
+// ---- Práctica: «no lo sé» y salir al inicio ----
+// Con click (no pointerdown) para que un dedo que empieza a hacer scroll no los dispare
+document.getElementById('btn-no-recuerdo').addEventListener('click', noLoRecuerdo);
+document.getElementById('btn-salir').addEventListener('click', salirDeSesion);
 
 // ---- Perfiles: selección ----
 document.getElementById('lista-perfiles').addEventListener('click', (e) => {
@@ -2046,6 +2290,75 @@ document.getElementById('opcion-ext-wrapper').addEventListener('click', (e) => {
   renderProgreso();
 });
 
+// ---- Mapa de calor: detalle de una casilla ----
+// Delegado en #mapa-calor (una sola escucha para las ~100 casillas).
+// Escritorio: el ratón muestra el detalle al pasar y lo oculta al salir de la tabla.
+// Táctil: el toque lo fija hasta tocar fuera u otra casilla (así se puede leer con calma).
+const mapaCalor = document.getElementById('mapa-calor');
+let tapInicio = null; // origen del toque, para distinguir un tap de un arrastre
+
+mapaCalor.addEventListener('pointerover', (e) => {
+  if (e.pointerType !== 'mouse') return; // en táctil manda el toque
+  if (heatTipPinned) return;             // en híbridos no pisar el detalle fijado con un toque
+  const td = e.target.closest('td[data-t]');
+  if (td && td !== heatTipTd) mostrarTipCalor(td);
+});
+
+// pointerleave no burbujea: solo salta al abandonar la tabla, no al cambiar de casilla
+mapaCalor.addEventListener('pointerleave', () => {
+  if (!heatTipPinned) ocultarTipCalor();
+});
+
+mapaCalor.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse') return;
+  tapInicio = { x: e.clientX, y: e.clientY, td: e.target.closest('td[data-t]') };
+});
+
+mapaCalor.addEventListener('pointerup', (e) => {
+  if (e.pointerType === 'mouse' || !tapInicio) return;
+  const { x, y, td } = tapInicio;
+  tapInicio = null;
+  // Si el dedo se movió, era un desplazamiento (scroll) y no un toque
+  if (!td || Math.hypot(e.clientX - x, e.clientY - y) > 10) return;
+  // Volver a tocar la misma casilla cierra el detalle
+  if (heatTipPinned && heatTipTd === td) {
+    heatTipPinned = false;
+    ocultarTipCalor();
+    return;
+  }
+  heatTipPinned = true;
+  mostrarTipCalor(td);
+});
+
+mapaCalor.addEventListener('pointercancel', () => { tapInicio = null; });
+
+// Tocar fuera cierra el detalle fijado
+document.addEventListener('pointerdown', (e) => {
+  if (!heatTipPinned) return;
+  if (e.target.closest('#mapa-calor')) return;
+  heatTipPinned = false;
+  tapInicio = null;
+  ocultarTipCalor();
+});
+
+// Al desplazar, el detalle acompaña a su casilla; si esta sale de pantalla, se cierra.
+// capture=true escucha también el scroll horizontal interno de .mapa-calor
+window.addEventListener('scroll', () => {
+  if (heatTipEl.hidden || !heatTipTd) return;
+  const r = heatTipTd.getBoundingClientRect();
+  const visible = r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
+  if (visible) posicionarTipCalor(heatTipTd);
+  else {
+    heatTipPinned = false;
+    ocultarTipCalor();
+  }
+}, true);
+
+window.addEventListener('resize', () => {
+  heatTipPinned = false;
+  ocultarTipCalor();
+});
+
 // ---- Paneles laterales (ajustes y debug) ----
 document.getElementById('btn-ajustes').addEventListener('click', () => alternarPanel('panel-ajustes'));
 
@@ -2159,6 +2472,17 @@ if (CONFIG.modoPrueba) {
 // ═══════════════════════════════════════════════════════
 // INICIALIZACIÓN
 // ═══════════════════════════════════════════════════════
+// Etiquetas de la pantalla de práctica (viven en T para poder traducirse)
+function renderTextosPractica() {
+  const noRecuerdo = document.getElementById('btn-no-recuerdo');
+  if (noRecuerdo) {
+    noRecuerdo.textContent = T.practica.noRecuerdo;
+    noRecuerdo.setAttribute('aria-label', T.practica.noRecuerdoAria);
+  }
+  const salir = document.getElementById('btn-salir');
+  if (salir) salir.setAttribute('aria-label', T.practica.salir);
+}
+
 function init() {
   cargarPrefs();
   aplicarTema();
@@ -2176,6 +2500,7 @@ function init() {
 
   renderAjustes();
   renderRitmoSelector();
+  renderTextosPractica();
   initDebug();
 
   // Guía de bienvenida: solo si no se pidió no volver a mostrarla

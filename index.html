@@ -114,6 +114,7 @@
             <span id="respuesta-valor"></span>
             <span id="cursor" class="cursor-parpadeo">|</span>
           </div>
+          <button id="btn-no-recuerdo" class="btn-no-recuerdo"></button>
         </div>
 
         <div class="teclado" role="group" aria-label="Teclado numérico">
@@ -169,6 +170,7 @@
         <div id="progreso-stats" class="stats-cards"></div>
         <div id="mapa-calor" class="mapa-calor"></div>
         <div id="leyenda-mapa" class="leyenda"></div>
+        <p id="heat-ayuda" class="leyenda-ayuda"></p>
         <div id="medallas-todas" class="medallas-showcase"></div>
         <div id="ritmo-wrapper" class="opcion-ritmo glass"></div>
         <div id="opcion-ext-wrapper" class="opcion-extendidas glass"></div>
@@ -182,6 +184,9 @@
   </main>
 
   <!-- ═══════════════ AJUSTES (barra lateral) ═══════════════ -->
+  <!-- Salir de la sesión guardando lo hecho: solo se muestra en la pantalla de práctica -->
+  <button id="btn-salir" class="btn-flotante btn-salir" hidden
+    aria-label="Salir al inicio y guardar el progreso">←</button>
   <button id="btn-ajustes" class="btn-flotante btn-ajustes" aria-label="Abrir ajustes" aria-expanded="false"
     aria-controls="panel-ajustes">⚙️</button>
 
@@ -227,6 +232,9 @@
   </div>
 
   <div id="panel-overlay" class="panel-overlay" hidden></div>
+
+  <!-- Detalle de una casilla del mapa de calor (nodo único reutilizado) -->
+  <div id="heat-tip" class="heat-tip" role="tooltip" hidden></div>
 
   <!-- ═══════════════ GUÍA DE BIENVENIDA ═══════════════ -->
   <div id="bienvenida-overlay" class="modal-overlay" hidden>
