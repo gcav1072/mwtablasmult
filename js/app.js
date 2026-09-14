@@ -55,7 +55,7 @@ const T = {
     copiar: '✍️ Escríbe el número en el cuadro de abajo para seguir',
     copiado: '✅ ¡Eso es!',
     repescaMensajes: [
-      '💪 ¡Casi lo tienes! Vamos a por esa otra vez',
+      '💪 ¡Casi lo tienes! Vamos a por esa otra vez: No seas como yo que me recibí de ingeniero sin saberme las tablas :v :v :v',
       '😄 ¡Se te está resistiendo! Esta vez seguro que sí',
       '🔥 ¡Esta tabla te está poniendo a prueba! ¡Tú puedes!',
       '🚀 ¡Ya casi es tuya! Un intento más y lo tienes',
