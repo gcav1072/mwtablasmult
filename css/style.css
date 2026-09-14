@@ -2191,6 +2191,66 @@ h2 {
   background: rgba(239, 68, 68, 0.25);
 }
 
+/* Campo «duración de un día» y notas del panel de debug */
+.debug-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.debug-campo label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.debug-campo-fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.debug-campo-fila input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.debug-campo-fila input:focus {
+  outline: none;
+  border-color: var(--danger);
+}
+
+.debug-campo-sufijo {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.btn-debug-mini {
+  flex-shrink: 0;
+  padding: 9px 10px;
+}
+
+/* `.debug-panel p` fija color y tamaño a todos los <p> del panel: estas notas
+   necesitan más especificidad para no heredar esos valores */
+.debug-panel p.debug-nota {
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.debug-panel p.debug-error {
+  color: #fca5a5;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 /* ═══════════════════════════════════════════════════════
    ANIMATIONS
    ═══════════════════════════════════════════════════════ */

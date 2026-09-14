@@ -16,13 +16,13 @@ Desarrollada con **HTML5, Vanilla CSS y Vanilla JavaScript**, sin dependencias n
   - **Salir a mitad de sesión**: el botón **←** de la esquina vuelve al inicio **guardando lo que ya se hizo** (registro parcial de la sesión, racha y medallas). No bloquea al niño con el tiempo de espera y, al volver, *"Para hoy"* muestra solo las tarjetas que faltan.
   - Sesiones diarias según el **ritmo del perfil**: Normal (15 tarjetas/día), Rápido (20) o Intenso (30). Si hay más fichas vencidas de las previstas, la sesión incluye **todas** las vencidas, de modo que el contador *"Para hoy"* de Inicio coincide siempre con el número de tarjetas de la sesión.
   - **Ritmo de estudio configurable**: al crear un perfil se eligen 3 ritmos con su tiempo estimado de sesión (Normal ≈ 5 min · Rápido ≈ 6 min · Intenso ≈ 9 min). También se pueden **cambiar las tarjetas diarias** después, desde la tarjeta *"⚡ Tarjetas diarias"* de la pantalla **Mi Progreso**.
-  - Cooldown de 20 horas entre sesiones completadas para fomentar el hábito diario sin sobrecargar. Mientras dura, *"Para hoy"* muestra **`--`** (no adelanta las tarjetas del día siguiente) y el botón indica cuánto falta para la próxima sesión.
+  - Cooldown de 20 horas entre sesiones completadas para fomentar el hábito diario sin sobrecargar. Mientras dura, *"Para hoy"* muestra **`--`** (no adelanta las tarjetas del día siguiente) y el botón indica cuánto falta para la próxima sesión. La frontera de "otro día" (para descontar una sesión parcial y sus tiempos) es el **día natural (24 h)**, no el cooldown.
   - Sistema de **repesca ilimitada**: las fichas falladas vuelven a preguntarse al final de la sesión, tantas veces como haga falta hasta acertarlas. En la repesca la tarjeta **no sube de nivel** al acertar (así el aprendizaje se consolida mejor) y se mantienen los mensajes según lo rápido que se responda; el único cambio de nivel es que **cada fallo baja un escalón** en el momento de la equivocación. Los fallos dentro de la repesca no penalizan las estadísticas.
   - **Rondas extra opcionales**: al terminar, se puede practicar en bloques de **+5 tarjetas** tantas veces como se quiera (se suman a la sesión del día).
 
 - **📊 Visualización del Progreso & Gamificación:**
   - **Matriz / Heatmap interactivo**: visualización de todas las multiplicaciones (tablas del 1 al 10, o hasta el 12) con código de colores según el nivel de dominio. Cada uno de los 7 niveles y el estado *graduada* usa una tonalidad claramente distinta (rojo → naranja → amarillo → lima → esmeralda → cian → azul → fucsia para las graduadas) y los **mismos colores** valen para tema claro y oscuro.
-  - **Detalle de cada tarjeta**: al pasar el cursor (o **tocar** en pantallas táctiles, donde el detalle queda fijo hasta tocar fuera) aparece un cuadro con la operación, el **estado** de esa multiplicación, una **gráfica de dona** de aciertos vs. fallos, las veces que se ha estudiado, los aciertos, los fallos, cuándo fue la última vez y cuándo toca el próximo repaso.
+  - **Detalle de cada tarjeta**: al pasar el cursor (o **tocar** en pantallas táctiles, donde el detalle queda fijo hasta tocar fuera) aparece un cuadro con la operación, el **estado** de esa multiplicación, una **gráfica de dona** de aciertos vs. fallos, las veces que se ha estudiado, los aciertos, los fallos, cuándo fue la última vez y cuándo toca el próximo repaso. Los tiempos se cuentan en **días del sistema** (con el día por defecto, días reales), así que el número mostrado y la escalera de repasos siempre coinciden.
   - **Sistema de medallas**: 9 logros desbloqueables por hitos (primeros pasos, rachas, velocidad, dominio de tablas, graduación).
   - **Estadísticas detalladas**: racha actual y máxima, total de aciertos/fallos, tiempo medio de respuesta.
   - **Desbloqueo progresivo**: opción de activar las tablas del 11 y 12 automáticamente al alcanzar el 80% de dominio de las tablas básicas (o manualmente desde ajustes).
@@ -121,11 +121,14 @@ Haz doble clic en `index.html` o ábrelo en tu navegador favorito.
 Para pruebas rápidas y desarrollo, la app cuenta con un panel de herramientas:
 - Añade `?debug=1` en la URL del navegador (ej: `http://localhost:8080/?debug=1`).
 - En modo debug:
-  - Las sesiones tienen un cooldown acelerado de 10 segundos.
+  - **Duración de un día configurable** (campo *«Duración de un día (segundos)»* + *Aplicar*). Por defecto son **86 400 s (24 h)**, así el modo debug se comporta **exactamente como producción**; bajarlo (p. ej. a 10 s) acelera toda la escala SRS para probar semanas de repaso en segundos. El valor se recuerda entre recargas (`tablas_prefs_v1`).
+    - La escala elegida afecta a **todo** el calendario: escalones SRS, retos de mantenimiento, cooldown y los textos de tiempo del detalle del mapa de calor.
+    - El **cooldown** mantiene la proporción de producción (20 h de cada 24 h del día), así que con el día real son las 20 h de siempre y con un día de 10 s son ≈ 8 s.
+    - Las fechas **ya guardadas** no se recalculan: al bajar el día con un perfil usado, sus vencimientos siguen en la escala anterior y los tiempos se ven "exagerados". Para eso están el aviso del panel, **🗑️ Reset perfil** y **⏩ +7 días**.
   - Aparece una **pestaña lateral** (🛠️) que despliega un **panel de debug** desde la derecha:
     - En escritorio el panel arranca **abierto** (sin oscurecer la pantalla, para poder usar la app).
     - En móvil queda **plegado** tras la pestaña para no tapar botones.
-  - Dentro del panel: avanzar días (`+1 día`), resetear el perfil activo o volcar el estado a la consola (`console.table`).
+  - Dentro del panel: **fecha y hora simuladas** del reloj virtual, el campo de duración del día, avanzar días (`+1 día` y `+7 días`), resetear el perfil activo o volcar el estado a la consola (`console.table`).
 - El panel de ajustes y el de debug son mutuamente excluyentes y se cierran con `Esc`, con la ✕ o pulsando fuera.
 ---
 

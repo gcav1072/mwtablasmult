@@ -264,8 +264,16 @@ const RITMO_DEFECTO = 'normal';
 // Estimación mostrada en el selector ("≈ X min"): segundos medios por tarjeta
 const SEGUNDOS_POR_TARJETA = 18;
 
-const DIA = CONFIG.modoPrueba ? 10_000 : 86_400_000;
-const COOLDOWN_SESION = CONFIG.modoPrueba ? DIA : 20 * 60 * 60 * 1000; // 20h en prod, 1 DIA en debug
+// Duración de un "día" del sistema: escala del SRS (1, 3, 7...) y de todos los
+// textos de tiempo (detalle del mapa de calor, cooldown, "de otro día").
+// En producción es un día real; en modo debug se puede acortar desde el panel 🛠️
+// (ver aplicarDuracionDia()). Con el valor por defecto (24 h) el debug se comporta
+// exactamente como producción.
+let DIA = 86_400_000;
+// Cooldown entre sesiones: 20 h de cada 24 h del día configurado. Con el día real
+// son las 20 h de producción y con un día de debug corto no deja el botón
+// bloqueado "un día entero".
+let COOLDOWN_SESION = Math.round(DIA * 20 / 24);
 
 // ═══════════════════════════════════════════════════════
 // COLORES DEL MAPA DE CALOR
@@ -487,7 +495,9 @@ function orientar(item, perfil) {
 // ═══════════════════════════════════════════════════════
 // No van por perfil: son ajustes del navegador/dispositivo.
 const CLAVE_PREFS = 'tablas_prefs_v1';
-const PREFS_DEFECTO = { version: 1, sonido: true, tema: 'system', bienvenida: true };
+// diaDebugSeg: duración de un día del sistema en modo debug (segundos). Por defecto
+// 24 h, así el modo debug reproduce el calendario real salvo que se acorte a mano.
+const PREFS_DEFECTO = { version: 1, sonido: true, tema: 'system', bienvenida: true, diaDebugSeg: 86_400 };
 let PREFS = { ...PREFS_DEFECTO };
 
 const mqTemaClaro = window.matchMedia
@@ -852,7 +862,9 @@ function esc(str) {
 function hechasHoy(perfil) {
   const ultima = perfil.sesiones[perfil.sesiones.length - 1];
   if (!ultima || !ultima.parcial) return 0;
-  if (ahora() - ultima.fecha >= COOLDOWN_SESION) return 0; // de otro día
+  // La frontera es un DÍA (24 h reales), no el cooldown de 20 h: la sesión de
+  // "hoy" es la del mismo día natural del calendario simulado.
+  if (ahora() - ultima.fecha >= DIA) return 0; // de otro día
   return ultima.aciertos + ultima.fallos;
 }
 
@@ -1336,7 +1348,8 @@ function combinarEnSesion(destino, stats, tiempoMedio, duracion) {
 // ¿La última sesión es un registro parcial del mismo día? (se puede continuar)
 function parcialVigente(perfil) {
   const ultima = perfil.sesiones[perfil.sesiones.length - 1];
-  return !!ultima && !!ultima.parcial && (ahora() - ultima.fecha) < COOLDOWN_SESION;
+  // Misma frontera que hechasHoy(): un día (24 h reales), no el cooldown de 20 h
+  return !!ultima && !!ultima.parcial && (ahora() - ultima.fecha) < DIA;
 }
 
 // Guarda lo hecho al salir a mitad de sesión. Si ya había un parcial del mismo
@@ -1644,8 +1657,10 @@ function estadoDeItem(item) {
   return { nombre: T.leyenda[idx], color: COLORES_ESCALON[idx] };
 }
 
-// Días que faltan (≥0) hasta una marca de tiempo, en "días" del sistema
-// (en modo debug DIA dura 10 s, así que las fechas de prueba cuadran)
+// Días que faltan (≥0) hasta una marca de tiempo, en "días" del sistema (DIA).
+// Al ser DIA la misma escala con la que se programa el SRS, el número que se
+// muestra y la escalera de repasos siempre cuentan lo mismo. Con el día por
+// defecto (24 h) son días reales; en debug se prorratea junto con el día.
 function diasHasta(ts) {
   return Math.max(0, Math.round((ts - ahora()) / DIA));
 }
@@ -2054,6 +2069,9 @@ function cerrarPaneles() {
 // ═══════════════════════════════════════════════════════
 function initDebug() {
   if (!CONFIG.modoPrueba) return;
+  // El campo refleja el día vigente (por defecto 24 h, o el último aplicado)
+  const input = document.getElementById('debug-dia');
+  if (input) input.value = String(Math.round(DIA / 1000));
   actualizarDebugTiempo();
   // En escritorio el panel arranca abierto (sin fondo, para poder usar la app);
   // en móvil queda plegado tras la pestaña para no tapar botones.
@@ -2062,12 +2080,61 @@ function initDebug() {
   actualizarBotonesFlotantes();
 }
 
+// Texto de ayuda del campo «duración de un día», con la equivalencia legible
+function textoInfoDia() {
+  const seg = DIA / 1000;
+  let equivalencia;
+  if (seg === 86_400) equivalencia = '24 h (un día real)';
+  else if (seg >= 3600) equivalencia = `${Math.round(seg / 360) / 10} h`;
+  else if (seg >= 60) equivalencia = `${Math.round(seg / 6) / 10} min`;
+  else equivalencia = `${Math.round(seg * 10) / 10} s`;
+  return `Un día = ${equivalencia}. El mapa de calor cuenta los días en esta escala.`;
+}
+
+// Cambia la duración de un día del sistema (solo en modo debug). Todo el calendario
+// (escalones SRS, retos, cooldown) se mide con DIA, así que el nuevo valor rige
+// desde este momento hacia delante.
+function aplicarDuracionDia(seg, { persistir = true } = {}) {
+  if (!CONFIG.modoPrueba) return false;
+  if (!Number.isFinite(seg) || seg <= 0) return false;
+
+  DIA = Math.round(seg * 1000);
+  // El cooldown mantiene la proporción de producción (20 h de 24 h)
+  COOLDOWN_SESION = Math.round(DIA * 20 / 24);
+
+  if (persistir) {
+    PREFS.diaDebugSeg = seg;
+    guardarPrefs();
+  }
+
+  actualizarDebugTiempo();
+  // Las fechas ya guardadas no se recalculan: el detalle del heatmap desaparece
+  // para no mostrar una escala mezclada al volver a abrir la pantalla
+  ocultarTipCalor();
+  if (pantallaActual === 'pantalla-inicio') renderInicio();
+  if (pantallaActual === 'pantalla-progreso') renderProgreso();
+  return true;
+}
+
+// Avanza el reloj simulado N días del sistema (lo usan «+1 día» y «+7 días»)
+function avanzarDias(n) {
+  debugTimeOffset += DIA * n;
+  actualizarDebugTiempo();
+  if (pantallaActual === 'pantalla-inicio') renderInicio();
+  if (pantallaActual === 'pantalla-progreso') renderProgreso();
+}
+
 function actualizarDebugTiempo() {
   const el = document.getElementById('debug-tiempo');
   if (el) {
     const dias = Math.round(debugTimeOffset / DIA * 10) / 10;
     el.textContent = `Offset: +${dias} días (${Math.round(debugTimeOffset / 1000)}s)`;
   }
+  // Reloj virtual: con el día acortado es la única forma de leer "cuándo es hoy"
+  const fecha = document.getElementById('debug-fecha');
+  if (fecha) fecha.textContent = `Ahora: ${new Date(ahora()).toLocaleString()}`;
+  const info = document.getElementById('debug-dia-info');
+  if (info) info.textContent = textoInfoDia();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2448,10 +2515,32 @@ if (CONFIG.modoPrueba) {
   document.getElementById('debug-tab').addEventListener('click', () => alternarPanel('debug-panel'));
 
   document.getElementById('debug-avanzar').addEventListener('click', () => {
-    debugTimeOffset += DIA;
-    actualizarDebugTiempo();
-    if (pantallaActual === 'pantalla-inicio') renderInicio();
-    if (pantallaActual === 'pantalla-progreso') renderProgreso();
+    avanzarDias(1);
+  });
+
+  document.getElementById('debug-avanzar7').addEventListener('click', () => {
+    avanzarDias(7);
+  });
+
+  // Duración configurable de un día (por defecto 24 h ⇒ calendario real)
+  const inputDia = document.getElementById('debug-dia');
+  const errorDia = document.getElementById('debug-dia-error');
+  const aplicarDiaDesdeInput = () => {
+    const seg = Number(inputDia.value);
+    const valido = Number.isFinite(seg) && seg >= 1 && seg <= 604800;
+    if (errorDia) {
+      errorDia.hidden = valido;
+      errorDia.textContent = valido ? '' : 'Introduce entre 1 y 604800 segundos.';
+    }
+    if (valido) {
+      aplicarDuracionDia(seg);
+      inputDia.value = String(Math.round(DIA / 1000));
+    }
+  };
+  document.getElementById('debug-dia-aplicar').addEventListener('click', aplicarDiaDesdeInput);
+  inputDia.addEventListener('change', aplicarDiaDesdeInput);
+  inputDia.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); aplicarDiaDesdeInput(); }
   });
 
   document.getElementById('debug-reset').addEventListener('click', () => {
@@ -2502,6 +2591,9 @@ function renderTextosPractica() {
 function init() {
   cargarPrefs();
   aplicarTema();
+  // El día configurable de debug debe estar aplicado antes del primer render
+  // (cooldown del botón y frontera de "hoy" dependen de DIA)
+  aplicarDuracionDia(PREFS.diaDebugSeg, { persistir: false });
   ESTADO = cargarTodo();
 
   const perfil = obtenerPerfilActivo();

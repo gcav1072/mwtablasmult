@@ -225,7 +225,20 @@
     </div>
     <div class="panel-cuerpo">
       <p id="debug-tiempo"></p>
+      <p id="debug-fecha"></p>
+      <div class="debug-campo">
+        <label for="debug-dia">Duración de un día (segundos)</label>
+        <div class="debug-campo-fila">
+          <input type="number" id="debug-dia" min="1" max="604800" step="1" inputmode="numeric"
+            aria-label="Duración de un día en segundos">
+          <span class="debug-campo-sufijo">s</span>
+          <button id="debug-dia-aplicar" class="btn-debug btn-debug-mini">Aplicar</button>
+        </div>
+      </div>
+      <p id="debug-dia-info" class="debug-nota"></p>
+      <p id="debug-dia-error" class="debug-error" hidden></p>
       <button id="debug-avanzar" class="btn-debug">⏩ +1 día</button>
+      <button id="debug-avanzar7" class="btn-debug">⏩ +7 días</button>
       <button id="debug-reset" class="btn-debug">🗑️ Reset perfil</button>
       <button id="debug-consola" class="btn-debug">📋 Estado → consola</button>
     </div>
