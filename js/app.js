@@ -56,7 +56,7 @@ const T = {
     copiado: '✅ ¡Eso es!',
     repescaMensajes: [
       '💪 ¡Casi lo tienes! Vamos a por esa otra vez: No seas como yo que me recibí de ingeniero sin saberme las tablas :v :v :v',
-      '😄 ¡Se te está resistiendo! Esta vez seguro que sí',
+      '😄 VAMOS QUE SÍ SE PUEDEEEEEEEEEEEEEEEEEEEEE',
       '🔥 ¡Esta tabla te está poniendo a prueba! ¡Tú puedes!',
       '🚀 ¡Ya casi es tuya! Un intento más y lo tienes',
       '🌟 ¡Las tablas más difíciles son las que más orgullo dan! ¡Vamos!',
@@ -116,7 +116,7 @@ const T = {
         },
         {
           icono: '✍️', titulo: 'Si falla, escribe la respuesta',
-          texto: 'Al fallar no se avanza directamente: aparece el resultado correcto y el niño debe teclearlo para continuar. Esa ficha vuelve a salir al final de la sesión y se repite hasta que la acierte. Los fallos de esta "repesca" no penalizan sus estadísticas.',
+          texto: 'Al fallar no se avanza directamente: aparece el resultado correcto y el niño debe teclearlo para continuar. Esa ficha vuelve a salir al final de la sesión y se repite hasta que la acierte. En esta "repesca" la ficha no sube de nivel aunque se acierte rápido (se está consolidando) y cada fallo baja un escalón. Los fallos de la repesca no penalizan sus estadísticas.',
         },
         {
           icono: '⚡', titulo: 'El ritmo diario',
@@ -174,7 +174,7 @@ const T = {
   },
   motivacion: {
     excelente: [
-      '¡Increíble! ¡Lo estás bordando! 🌟',
+      '¡Increíble! +676767 de aura 🌟',
       '¡Eres una máquina de multiplicar! 🚀',
       '¡Fantástico trabajo! ¡Sigue así! 💪',
       '¡Brillante! ¡Las tablas no se te resisten! ✨',
@@ -588,7 +588,7 @@ function clasificar(esCorrecto, ms) {
   return 'titubeante';
 }
 
-function actualizarItem(item, resultado, repetido = false) {
+function actualizarItem(item, resultado, enRepesca = false) {
   const now = ahora();
 
   // ── Fallo ──
@@ -597,10 +597,11 @@ function actualizarItem(item, resultado, repetido = false) {
     item.racha = 0;
     item.ultimaVez = now;
 
-    if (repetido) {
-      // Fallo repetido dentro de la misma sesión (repesca): reinicia por completo
+    if (enRepesca) {
+      // En repesca el único cambio de nivel es bajar uno: la ficha se está
+      // consolidando, así que un fallo la devuelve un escalón (nunca al principio)
       item.graduada = false;
-      item.escalon = 0;
+      item.escalon = Math.max(0, item.escalon - 1);
     } else if (item.graduada) {
       // Una ficha graduada que falla vuelve al mazo activo, sin castigo duro
       item.graduada = false;
@@ -620,8 +621,10 @@ function actualizarItem(item, resultado, repetido = false) {
   item.racha++;
   item.ultimaVez = now;
 
-  // Titubeante: acierta, pero no consolida ni avanza (mantiene el intervalo)
-  if (resultado === 'titubeante') {
+  // Titubeante: acierta, pero no consolida ni avanza (mantiene el intervalo).
+  // En repesca tampoco se sube de nivel (solo se confirma el acierto y se
+  // reprograma el próximo repaso), porque la ficha se está consolidando.
+  if (resultado === 'titubeante' || enRepesca) {
     if (item.graduada) item.proximoReto = now + CONFIG.retoIntervaloDias * DIA;
     else item.proximaRevision = now + CONFIG.escalonesDias[item.escalon] * DIA;
     return;
@@ -1117,9 +1120,9 @@ function resolverRespuesta(respuestaUsuario) {
   const resultado = clasificar(esCorrecto, ms);
   const key = claveCanonica(item.t, item.f);
 
-  // Un segundo fallo de la misma ficha en la sesión (repesca) sí la reinicia del todo
-  const repetido = !!intentosFallidos[key];
-  actualizarItem(item, resultado, repetido);
+  // Dentro de la repesca la ficha no sube de nivel; el único cambio es bajar
+  // uno al fallar (ver actualizarItem)
+  actualizarItem(item, resultado, sesion.enRepesca);
 
   if (resultado === 'fallo') {
     const primerFallo = !intentosFallidos[key];
